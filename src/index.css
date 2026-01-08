@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&display=swap');
+
+@theme {
+  /* --- PALETA TÁTICA (BATFLECK) --- */
+  
+  /* Estrutura */
+  --color-wayne-dark: #0f1014;       /* Fundo Principal */
+  --color-wayne-panel: #1a1c23;      /* Painéis e Cartões */
+  --color-wayne-border: #2c2f3a;     /* Bordas de separação */
+  
+  /* Acentos */
+  --color-accent-blue: #38bdf8;      /* Azul Tático Principal */
+  --color-accent-blue-dim: #0ea5e9;  /* Azul Hover */
+  --color-accent-green: #10b981;     /* Sucesso/Lucro */
+  --color-accent-red: #ef4444;       /* Perigo/Despesa */
+  --color-accent-gold: #f59e0b;      /* Bitcoin/Alerta */
+  --color-accent-purple: #8b5cf6;    /* Oracle/Dados */
+
+  /* Texto */
+  --color-text-main: #e2e8f0;        /* Texto Claro */
+  --color-text-muted: #94a3b8;       /* Texto Secundário */
+
+  /* Fontes */
+  --font-hud: "Titillium Web", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Configurações Globais */
+:root {
+  background-color: var(--color-wayne-dark);
+  color: var(--color-text-main);
+  font-family: var(--font-hud);
+}
+
+/* Scrollbar Tática Personalizada */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-wayne-dark); }
+::-webkit-scrollbar-thumb { background: var(--color-wayne-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-blue); }
+
+/* Utilitários Extras */
+.text-shadow-glow { text-shadow: 0 0 20px rgba(56, 189, 248, 0.3); }
