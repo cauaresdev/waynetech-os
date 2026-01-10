@@ -47,43 +47,84 @@ const TacticalButton = ({ children, onClick, variant = 'primary', className = ""
     </button>
 );
 
-// --- DADOS PADRÃO ---
+// --- DADOS DO PROTOCOLO BEN AFFLECK 2.0 ---
 const defaultWorkoutPlans: WorkoutPlans = {
     hipertrofia: { 
-        segunda: { name: 'COSTAS & BÍCEPS', exercises: [{ name: 'Barra Fixa com Peso', sets: '5x5', weight: 'Carga MAX' }, { name: 'Remada Curvada', sets: '4x8-10', weight: 'Barra' }, { name: 'Puxada Alta', sets: '3x12', weight: 'Segura 2s' }, { name: 'Rosca Direta', sets: '3x10', weight: 'Barra W' }, { name: 'Rosca Martelo', sets: '3x12', weight: 'Halteres' }, { name: 'Remo Máquina', sets: '10 min', weight: 'Cardio' }] }, 
-        terca: { name: 'INFERIOR A: Agilidade', exercises: [{ name: 'Levantamento Terra', sets: '4x4-6', weight: 'Pesado' }, { name: 'Agachamento Búlgaro', sets: '3x8', weight: 'Halteres' }, { name: 'Avanço Caminhando', sets: '3x10', weight: 'Halteres' }, { name: 'Box Jump', sets: '3x10', weight: 'Explosão' }, { name: 'Sled Push / Sprint', sets: '4 Rounds', weight: 'Máximo' }, { name: 'Prancha Abdominal', sets: '3x60s', weight: 'Isometria' }] }, 
-        quarta: { name: 'OMBROS: Armadura', exercises: [{ name: 'Desenv. Militar', sets: '4x8-10', weight: 'Barra/Halter' }, { name: 'Elevação Lateral', sets: '4x15', weight: 'Controle' }, { name: 'Crucifixo Inverso', sets: '3x15', weight: 'Post. Ombro' }, { name: 'Encolhimento', sets: '5x10', weight: 'Muito Pesado' }, { name: 'Plank Shoulder Taps', sets: '3x Falha', weight: 'Bodyweight' }] }, 
-        quinta: { name: 'INFERIOR B: Força Bruta', exercises: [{ name: 'Agachamento Livre', sets: '5x5', weight: 'Carga MAX' }, { name: 'Leg Press 45', sets: '4x10', weight: 'Pés Altos' }, { name: 'Cadeira Extensora', sets: '3x12', weight: 'Drop-set final' }, { name: 'Panturrilha Sentado', sets: '4x20', weight: 'Queima' }] }, 
-        sexta: { name: 'PEITO & TRÍCEPS', exercises: [{ name: 'Supino Inclinado', sets: '4x8-10', weight: 'Halteres' }, { name: 'Supino Reto', sets: '3x6-8', weight: 'Barra' }, { name: 'Paralelas (Dips)', sets: '3x Falha', weight: '+Peso se der' }, { name: 'Tríceps Testa', sets: '3x12', weight: 'Barra W' }, { name: 'Flexão de Braço', sets: '1x Falha', weight: 'Finalizador' }] }, 
-        
-        // --- SÁBADO ATUALIZADO: PROTOCOLO ARMADURA ---
+        segunda: { 
+            name: 'COSTAS, BÍCEPS & MANOPLA', 
+            exercises: [
+                { name: 'Barra Fixa (Pull-ups)', sets: '4x Falha', weight: 'Foco: Largura' }, 
+                { name: 'Puxada Alta Aberta', sets: '4x 12', weight: 'Cotovelos p/ baixo' }, 
+                { name: 'Remada Curvada', sets: '4x 10', weight: 'Carga' }, 
+                { name: 'Rosca Direta', sets: '3x 10', weight: 'Barra W' }, 
+                { name: 'Rosca Inversa (Antebraço)', sets: '4x 12', weight: 'Pegada Pronada' }, 
+                { name: 'Flexão de Punho', sets: '3x 20', weight: 'Antebraço' }
+            ] 
+        }, 
+        terca: { 
+            name: 'INFERIOR A (Agilidade)', 
+            exercises: [
+                { name: 'Levantamento Terra', sets: '4x 6', weight: 'Força Base' }, 
+                { name: 'Agachamento Búlgaro', sets: '3x 10', weight: 'Halteres' }, 
+                { name: 'Cadeira Extensora', sets: '3x 15', weight: 'Pump' }, 
+                { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Bike Leve (LISS)' }
+            ] 
+        }, 
+        quarta: { 
+            name: 'OMBROS (Capacete)', 
+            exercises: [
+                { name: 'Desenv. Máquina/Halter', sets: '4x 10', weight: 'Pesado' }, 
+                { name: 'Elevação Lateral', sets: '5x 15', weight: 'Volume Alto' }, 
+                { name: 'Crucifixo Inverso', sets: '4x 15', weight: 'Posterior' }, 
+                { name: 'Encolhimento', sets: '4x 12', weight: 'Trapézio' }, 
+                { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Abs com Carga' }
+            ] 
+        }, 
+        quinta: { 
+            name: 'INFERIOR B (Força)', 
+            exercises: [
+                { name: 'Agachamento Livre', sets: '5x 5', weight: 'Carga MAX' }, 
+                { name: 'Leg Press 45', sets: '4x 10', weight: 'Amplitude' }, 
+                { name: 'Mesa Flexora', sets: '4x 12', weight: 'Posterior' }, 
+                { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Caminhada (LISS)' }
+            ] 
+        }, 
+        sexta: { 
+            name: 'PEITO & TRÍCEPS', 
+            exercises: [
+                { name: 'Supino Inclinado', sets: '4x 8', weight: 'Foco Superior' }, 
+                { name: 'Crossover / Peck Deck', sets: '3x 12', weight: 'Esmaga' }, 
+                { name: 'Tríceps Corda', sets: '4x 12', weight: 'Polia' }, 
+                { name: 'Tríceps Testa', sets: '3x 10', weight: 'Barra W' }, 
+                { name: 'Elev. Lateral (Extra)', sets: '4x 15', weight: 'Pump Final' }
+            ] 
+        }, 
         sabado: { 
-            name: 'ARKHAM: Armadura (Ombro/Tríceps)', 
+            name: 'ARKHAM: Armadura', 
             exercises: [
                 { name: 'Desenv. Arnold', sets: '4x 10 reps', weight: 'Halteres' }, 
                 { name: 'Elevação Lateral', sets: '4x 15 (Dropset)', weight: 'Falha Total' }, 
                 { name: 'Tríceps Testa', sets: '4x 12 reps', weight: 'Barra W' }, 
                 { name: 'Supino Fechado', sets: '3x 10 reps', weight: 'Explosivo' }, 
                 { name: 'Clean & Press', sets: '3x 12 reps', weight: 'Halteres' },
-                { name: 'Tríceps Coice (Polia)', sets: '3x 15 reps', weight: 'Controle' }
+                { name: 'Tríceps Coice', sets: '3x 15 reps', weight: 'Controle' }
             ] 
         }, 
-        
-        domingo: { name: 'Descanso Tático', exercises: [{ name: 'Mobilidade', sets: '20min', weight: 'Foam Roller' }, { name: 'Caminhada', sets: '30min', weight: 'Leve' }] } 
+        domingo: { name: 'Descanso Tático', exercises: [{ name: 'Mobilidade', sets: '20min', weight: 'Foam Roller' }, { name: 'Caminhada', sets: '30min', weight: 'Leve (Opcional)' }] } 
     },
-    forca: { segunda: { name: 'Upper', exercises: [] }, terca: { name: 'Lower', exercises: [] }, quarta: { name: 'Descanso', exercises: [] }, quinta: { name: 'Upper', exercises: [] }, sexta: { name: 'Lower', exercises: [] }, sabado: { name: 'Descanso', exercises: [] }, domingo: { name: 'Descanso', exercises: [] } },
-    definicao: { segunda: { name: 'Fullbody A', exercises: [] }, terca: { name: 'Cardio', exercises: [] }, quarta: { name: 'Fullbody B', exercises: [] }, quinta: { name: 'Cardio', exercises: [] }, sexta: { name: 'Fullbody C', exercises: [] }, sabado: { name: 'HIIT', exercises: [] }, domingo: { name: 'Descanso', exercises: [] } }
+    forca: { segunda: { name: 'Upper', exercises: [] }, terca: { name: 'Lower', exercises: [] }, quarta: { name: 'Rest', exercises: [] }, quinta: { name: 'Upper', exercises: [] }, sexta: { name: 'Lower', exercises: [] }, sabado: { name: 'Rest', exercises: [] }, domingo: { name: 'Rest', exercises: [] } },
+    definicao: { segunda: { name: 'Fullbody', exercises: [] }, terca: { name: 'Cardio', exercises: [] }, quarta: { name: 'Fullbody', exercises: [] }, quinta: { name: 'Cardio', exercises: [] }, sexta: { name: 'Fullbody', exercises: [] }, sabado: { name: 'HIIT', exercises: [] }, domingo: { name: 'Rest', exercises: [] } }
 };
 
 const defaultRoutine: RoutineItem[] = [
-    { id: 1, timeStart: '06:00', timeEnd: '07:00', activity: 'Despertar + Cardio', category: 'training' },
-    { id: 2, timeStart: '07:00', timeEnd: '08:00', activity: 'Café + Leitura', category: 'sustenance' },
+    { id: 1, timeStart: '07:00', timeEnd: '07:15', activity: 'Stomach Vacuum', category: 'training' },
+    { id: 2, timeStart: '07:15', timeEnd: '08:00', activity: 'Café + Leitura', category: 'sustenance' },
     { id: 3, timeStart: '08:00', timeEnd: '12:00', activity: 'Deep Work', category: 'work' }
 ];
 
 const defaultLibrary = [ { id: 1, title: 'A Arte da Guerra', author: 'Sun Tzu', status: 'lido' } ];
-const defaultHabits = [ { id: 1, text: 'Beber 4L Água', completed: false }, { id: 2, text: 'Creatina', completed: false }, { id: 3, text: 'Dormir 8h', completed: false } ];
-const defaultMissions: Mission[] = [ { id: 1, title: 'Aprender Backend', status: 'intel', priority: 'alta' }, { id: 2, title: 'Aumentar Cargas 20%', status: 'em_curso', priority: 'normal' } ];
+const defaultHabits = [ { id: 1, text: 'Vacuum Matinal', completed: false }, { id: 2, text: 'Comer pós-cardio', completed: false }, { id: 3, text: 'Dormir 8h', completed: false } ];
+const defaultMissions: Mission[] = [ { id: 1, title: 'Vencer Ranking Gymrats', status: 'em_curso', priority: 'alta' }, { id: 2, title: 'Ombro Capacete', status: 'em_curso', priority: 'alta' } ];
 
 export default function BatmanWorkoutDashboard() {
   const [loading, setLoading] = useState(true);
@@ -93,7 +134,7 @@ export default function BatmanWorkoutDashboard() {
   const [currentView, setCurrentView] = useState(() => userProfile.name ? 'dashboard' : 'quiz');
   
   const [workoutData, setWorkoutData] = useState<WorkoutPlans>(() => { const s = localStorage.getItem('bat_workouts'); return s ? JSON.parse(s) : defaultWorkoutPlans; });
-  const [routine] = useState<RoutineItem[]>(() => { const s = localStorage.getItem('bat_routine'); return s ? JSON.parse(s) : defaultRoutine; });
+  const [routine, setRoutine] = useState<RoutineItem[]>(() => { const s = localStorage.getItem('bat_routine'); return s ? JSON.parse(s) : defaultRoutine; });
   const [weightHistory, setWeightHistory] = useState(() => { const s = localStorage.getItem('bat_weight_history'); return s ? JSON.parse(s) : [{date:'01/01', weight:70}]; });
   
   // STATES EXTRAS
@@ -107,8 +148,6 @@ export default function BatmanWorkoutDashboard() {
   const [selectedDay, setSelectedDay] = useState<WorkoutDay>('segunda');
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
   const [newWeightInput, setNewWeightInput] = useState('');
-  
-  // State do Modal de Leitura (CORREÇÃO)
   const [selectedJournalEntry, setSelectedJournalEntry] = useState<any>(null);
 
   // Inputs Extras
@@ -127,10 +166,7 @@ export default function BatmanWorkoutDashboard() {
   
   // Persistência
   useEffect(() => { setTimeout(() => setLoading(false), 1000); }, []);
-  
-  // --- CORREÇÃO: SALVANDO O PERFIL ---
   useEffect(() => { localStorage.setItem('bat_profile_v2', JSON.stringify(userProfile)); }, [userProfile]);
-  
   useEffect(() => { localStorage.setItem('bat_workouts', JSON.stringify(workoutData)); }, [workoutData]);
   useEffect(() => { localStorage.setItem('bat_missions', JSON.stringify(missions)); }, [missions]);
   useEffect(() => { localStorage.setItem('bat_habits', JSON.stringify(habits)); }, [habits]);
@@ -160,7 +196,7 @@ export default function BatmanWorkoutDashboard() {
       }
   };
 
-  // Funções Extras (Checklist, Missões, etc)
+  // Funções Extras
   const toggleHabit = (id: number) => setHabits(habits.map((h:any) => h.id === id ? { ...h, completed: !h.completed } : h));
   const addHabit = () => { if (newHabitText) { setHabits([...habits, { id: Date.now(), text: newHabitText, completed: false }]); setNewHabitText(''); } };
   const addMission = () => { if (newMissionText) { setMissions([...missions, { id: Date.now(), title: newMissionText, status: 'intel', priority: 'normal' }]); setNewMissionText(''); } };
@@ -177,10 +213,13 @@ export default function BatmanWorkoutDashboard() {
   const handleRemoveBook = (id: number) => setLibrary(library.filter((b:any) => b.id !== id));
   const addJournalEntry = () => { if(journalInput) { setJournal([{id: Date.now(), date: new Date().toLocaleDateString(), content: journalInput}, ...journal]); setJournalInput(''); }};
 
-  // --- Função de Reset Tático (Para carregar o sábado novo) ---
+  // --- Função de Reset Tático ---
   const resetToFactorySettings = () => {
-      if(confirm("COMANDO: Carregar Protocolo Armadura (Sábado Novo)?")) {
+      if(confirm("COMANDO: Carregar Protocolo Ben Affleck 2.0 (Com Antebraço & Novo Sábado)?")) {
           setWorkoutData(defaultWorkoutPlans);
+          setRoutine(defaultRoutine);
+          setMissions(defaultMissions);
+          setHabits(defaultHabits);
           alert("Protocolo Atualizado.");
       }
   };
