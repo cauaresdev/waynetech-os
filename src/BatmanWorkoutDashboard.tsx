@@ -3,7 +3,7 @@ import {
     Dumbbell, User, Plus, X, 
     CheckSquare, FileText, Save, 
     Edit3, Activity, Target, Lock, Check, Cpu, BarChart2,
-    BookOpen, Library, ArrowLeft, ArrowRight, Trash2,
+    BookOpen, Library, ArrowLeft, ArrowRight, Trash2, RefreshCw,
     Clock, Shield
 } from 'lucide-react';
 import { CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
@@ -50,16 +50,29 @@ const TacticalButton = ({ children, onClick, variant = 'primary', className = ""
 // --- DADOS PADRÃO ---
 const defaultWorkoutPlans: WorkoutPlans = {
     hipertrofia: { 
-        segunda: { name: 'COSTAS & BÍCEPS', exercises: [{ name: 'Barra Fixa', sets: '5x5', weight: 'BW' }, { name: 'Remada Curvada', sets: '4x8', weight: '60kg' }] }, 
-        terca: { name: 'INFERIOR A', exercises: [{ name: 'Agachamento', sets: '5x5', weight: '100kg' }] }, 
-        quarta: { name: 'OMBROS', exercises: [{ name: 'Desenv. Militar', sets: '4x8', weight: '40kg' }] }, 
-        quinta: { name: 'INFERIOR B', exercises: [{ name: 'Lev. Terra', sets: '3x5', weight: '120kg' }] }, 
-        sexta: { name: 'PEITO & TRÍCEPS', exercises: [{ name: 'Supino Reto', sets: '4x8', weight: '80kg' }] }, 
-        sabado: { name: 'CARDIO TÁTICO', exercises: [{ name: 'Corrida', sets: '5km', weight: 'Tempo' }] }, 
-        domingo: { name: 'REST DAY', exercises: [] } 
+        segunda: { name: 'COSTAS & BÍCEPS', exercises: [{ name: 'Barra Fixa com Peso', sets: '5x5', weight: 'Carga MAX' }, { name: 'Remada Curvada', sets: '4x8-10', weight: 'Barra' }, { name: 'Puxada Alta', sets: '3x12', weight: 'Segura 2s' }, { name: 'Rosca Direta', sets: '3x10', weight: 'Barra W' }, { name: 'Rosca Martelo', sets: '3x12', weight: 'Halteres' }, { name: 'Remo Máquina', sets: '10 min', weight: 'Cardio' }] }, 
+        terca: { name: 'INFERIOR A: Agilidade', exercises: [{ name: 'Levantamento Terra', sets: '4x4-6', weight: 'Pesado' }, { name: 'Agachamento Búlgaro', sets: '3x8', weight: 'Halteres' }, { name: 'Avanço Caminhando', sets: '3x10', weight: 'Halteres' }, { name: 'Box Jump', sets: '3x10', weight: 'Explosão' }, { name: 'Sled Push / Sprint', sets: '4 Rounds', weight: 'Máximo' }, { name: 'Prancha Abdominal', sets: '3x60s', weight: 'Isometria' }] }, 
+        quarta: { name: 'OMBROS: Armadura', exercises: [{ name: 'Desenv. Militar', sets: '4x8-10', weight: 'Barra/Halter' }, { name: 'Elevação Lateral', sets: '4x15', weight: 'Controle' }, { name: 'Crucifixo Inverso', sets: '3x15', weight: 'Post. Ombro' }, { name: 'Encolhimento', sets: '5x10', weight: 'Muito Pesado' }, { name: 'Plank Shoulder Taps', sets: '3x Falha', weight: 'Bodyweight' }] }, 
+        quinta: { name: 'INFERIOR B: Força Bruta', exercises: [{ name: 'Agachamento Livre', sets: '5x5', weight: 'Carga MAX' }, { name: 'Leg Press 45', sets: '4x10', weight: 'Pés Altos' }, { name: 'Cadeira Extensora', sets: '3x12', weight: 'Drop-set final' }, { name: 'Panturrilha Sentado', sets: '4x20', weight: 'Queima' }] }, 
+        sexta: { name: 'PEITO & TRÍCEPS', exercises: [{ name: 'Supino Inclinado', sets: '4x8-10', weight: 'Halteres' }, { name: 'Supino Reto', sets: '3x6-8', weight: 'Barra' }, { name: 'Paralelas (Dips)', sets: '3x Falha', weight: '+Peso se der' }, { name: 'Tríceps Testa', sets: '3x12', weight: 'Barra W' }, { name: 'Flexão de Braço', sets: '1x Falha', weight: 'Finalizador' }] }, 
+        
+        // --- SÁBADO ATUALIZADO: PROTOCOLO ARMADURA ---
+        sabado: { 
+            name: 'ARKHAM: Armadura (Ombro/Tríceps)', 
+            exercises: [
+                { name: 'Desenv. Arnold', sets: '4x 10 reps', weight: 'Halteres' }, 
+                { name: 'Elevação Lateral', sets: '4x 15 (Dropset)', weight: 'Falha Total' }, 
+                { name: 'Tríceps Testa', sets: '4x 12 reps', weight: 'Barra W' }, 
+                { name: 'Supino Fechado', sets: '3x 10 reps', weight: 'Explosivo' }, 
+                { name: 'Clean & Press', sets: '3x 12 reps', weight: 'Halteres' },
+                { name: 'Tríceps Coice (Polia)', sets: '3x 15 reps', weight: 'Controle' }
+            ] 
+        }, 
+        
+        domingo: { name: 'Descanso Tático', exercises: [{ name: 'Mobilidade', sets: '20min', weight: 'Foam Roller' }, { name: 'Caminhada', sets: '30min', weight: 'Leve' }] } 
     },
-    forca: { segunda: { name: 'Upper', exercises: [] }, terca: { name: 'Lower', exercises: [] }, quarta: { name: 'Rest', exercises: [] }, quinta: { name: 'Upper', exercises: [] }, sexta: { name: 'Lower', exercises: [] }, sabado: { name: 'Rest', exercises: [] }, domingo: { name: 'Rest', exercises: [] } },
-    definicao: { segunda: { name: 'Fullbody', exercises: [] }, terca: { name: 'Cardio', exercises: [] }, quarta: { name: 'Fullbody', exercises: [] }, quinta: { name: 'Cardio', exercises: [] }, sexta: { name: 'Fullbody', exercises: [] }, sabado: { name: 'HIIT', exercises: [] }, domingo: { name: 'Rest', exercises: [] } }
+    forca: { segunda: { name: 'Upper', exercises: [] }, terca: { name: 'Lower', exercises: [] }, quarta: { name: 'Descanso', exercises: [] }, quinta: { name: 'Upper', exercises: [] }, sexta: { name: 'Lower', exercises: [] }, sabado: { name: 'Descanso', exercises: [] }, domingo: { name: 'Descanso', exercises: [] } },
+    definicao: { segunda: { name: 'Fullbody A', exercises: [] }, terca: { name: 'Cardio', exercises: [] }, quarta: { name: 'Fullbody B', exercises: [] }, quinta: { name: 'Cardio', exercises: [] }, sexta: { name: 'Fullbody C', exercises: [] }, sabado: { name: 'HIIT', exercises: [] }, domingo: { name: 'Descanso', exercises: [] } }
 };
 
 const defaultRoutine: RoutineItem[] = [
@@ -114,6 +127,10 @@ export default function BatmanWorkoutDashboard() {
   
   // Persistência
   useEffect(() => { setTimeout(() => setLoading(false), 1000); }, []);
+  
+  // --- CORREÇÃO: SALVANDO O PERFIL ---
+  useEffect(() => { localStorage.setItem('bat_profile_v2', JSON.stringify(userProfile)); }, [userProfile]);
+  
   useEffect(() => { localStorage.setItem('bat_workouts', JSON.stringify(workoutData)); }, [workoutData]);
   useEffect(() => { localStorage.setItem('bat_missions', JSON.stringify(missions)); }, [missions]);
   useEffect(() => { localStorage.setItem('bat_habits', JSON.stringify(habits)); }, [habits]);
@@ -159,6 +176,14 @@ export default function BatmanWorkoutDashboard() {
   const handleAddBook = () => { if(newBook.title) { setLibrary([...library, { ...newBook, id: Date.now(), status: 'lido' }]); setIsAddBookModalOpen(false); } };
   const handleRemoveBook = (id: number) => setLibrary(library.filter((b:any) => b.id !== id));
   const addJournalEntry = () => { if(journalInput) { setJournal([{id: Date.now(), date: new Date().toLocaleDateString(), content: journalInput}, ...journal]); setJournalInput(''); }};
+
+  // --- Função de Reset Tático (Para carregar o sábado novo) ---
+  const resetToFactorySettings = () => {
+      if(confirm("COMANDO: Carregar Protocolo Armadura (Sábado Novo)?")) {
+          setWorkoutData(defaultWorkoutPlans);
+          alert("Protocolo Atualizado.");
+      }
+  };
 
   if (loading) {
     return (
@@ -283,6 +308,12 @@ export default function BatmanWorkoutDashboard() {
                             <div className="text-2xl font-bold text-white font-mono">160 <span className="text-sm text-accent-purple">g</span></div>
                         </div>
                     </div>
+                    {/* BOTÃO DE RESET TÁTICO ADICIONADO */}
+                    <div className="mt-4 pt-4 border-t border-wayne-border">
+                        <button onClick={resetToFactorySettings} className="w-full text-xs text-text-muted hover:text-accent-red uppercase font-bold tracking-widest flex items-center justify-center gap-2 transition-colors">
+                            <RefreshCw size={12}/> Resetar Treino
+                        </button>
+                    </div>
                 </TechCard>
                 <TechCard title="Missões Ativas" icon={Target}>
                     <div className="space-y-3">
@@ -322,7 +353,7 @@ export default function BatmanWorkoutDashboard() {
         {currentTab === 'stats' && (
             <div className="animate-in fade-in duration-500">
                 <TechCard title="Evolução de Carga" icon={BarChart2} subtitle="Análise de Dados">
-                    <div className="h-[75] w-full mt-6">
+                    <div className="h-75 w-full mt-6">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={weightHistory}>
                                 <defs>
@@ -440,9 +471,9 @@ export default function BatmanWorkoutDashboard() {
                         <TacticalButton onClick={addJournalEntry} className="w-full">Salvar Log <Save size={16}/></TacticalButton>
                     </TechCard>
                 </div>
-                <div className="h-[150]">
+                <div className="h-150">
                     <TechCard title="Histórico" icon={Lock} className="h-full">
-                        <div className="space-y-3 overflow-y-auto h-[125] custom-scrollbar pr-2">
+                        <div className="space-y-3 overflow-y-auto h-125 custom-scrollbar pr-2">
                             {journal.slice().reverse().map((entry: any) => (
                                 <div key={entry.id} onClick={() => setSelectedJournalEntry(entry)} className="p-4 rounded-sm bg-wayne-dark hover:bg-wayne-panel transition-all cursor-pointer group border border-wayne-border hover:border-accent-blue/50">
                                     <div className="text-xs text-text-muted font-bold mb-1 group-hover:text-accent-blue">{entry.date}</div>
