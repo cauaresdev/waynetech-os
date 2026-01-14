@@ -4,12 +4,12 @@ import {
     CheckSquare, FileText, Save, 
     Edit3, Activity, Target, Lock, Check, Cpu, BarChart2,
     BookOpen, Library, ArrowLeft, ArrowRight, Trash2, RefreshCw,
-    Clock, Shield
+    Clock, Shield, Database, Play, Video, Link
 } from 'lucide-react';
 import { CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 // --- CONFIGURAÇÃO DE TIPOS ---
-type AppTab = 'dashboard' | 'routine' | 'stats' | 'checklist' | 'missions' | 'journal' | 'library';
+type AppTab = 'dashboard' | 'routine' | 'protocols' | 'stats' | 'checklist' | 'missions' | 'journal' | 'library';
 interface Exercise { name: string; sets: string; weight: string; }
 interface Workout { name: string; exercises: Exercise[]; }
 type WorkoutDay = 'segunda' | 'terca' | 'quarta' | 'quinta' | 'sexta' | 'sabado' | 'domingo';
@@ -17,6 +17,11 @@ type UserGoal = 'hipertrofia' | 'forca' | 'definicao';
 type WorkoutPlans = Record<UserGoal, Record<WorkoutDay, Workout>>;
 interface Mission { id: number; title: string; status: 'intel' | 'em_curso' | 'neutralizado'; priority: 'alta' | 'normal'; }
 interface RoutineItem { id: number; timeStart: string; timeEnd: string; activity: string; category: 'work' | 'training' | 'rest' | 'sustenance'; }
+
+// Tipos para Cursos (Protocolos)
+interface Lesson { id: number; title: string; duration: string; completed: boolean; type: 'video' | 'text'; videoUrl?: string; }
+interface Module { id: number; title: string; lessons: Lesson[]; }
+interface Course { id: number; title: string; description: string; progress: number; modules: Module[]; }
 
 // --- COMPONENTES VISUAIS TÁTICOS ---
 const TechCard = ({ children, className = "", title, icon: Icon, active = false, subtitle }: any) => (
@@ -47,69 +52,83 @@ const TacticalButton = ({ children, onClick, variant = 'primary', className = ""
     </button>
 );
 
-// --- DADOS DO PROTOCOLO BEN AFFLECK 2.0 ---
+
+// --- COMPONENTE DO PLAYER MILITAR (CORRIGIDO COM REGEX) ---
+const MilitaryVideoPlayer = ({ lesson, onComplete }: { lesson: Lesson, onComplete: () => void }) => {
+    
+    // Função Tática de Extração de ID (BLINDADA)
+    const getEmbedUrl = (url: string) => {
+        if (!url) return null;
+        
+        // Regex que captura o ID do vídeo ignorando playlists, timestamps e outros lixos na URL
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+
+        // Se encontrou um ID de 11 caracteres (padrão Youtube), monta a URL limpa
+        if (match && match[2].length === 11) {
+            return `https://www.youtube.com/embed/${match[2]}`;
+        }
+        
+        return null;
+    };
+
+    const embedUrl = getEmbedUrl(lesson.videoUrl || '');
+
+    return (
+        <div className="w-full font-hud mb-6 animate-in fade-in duration-500">
+             <div className="flex justify-between items-end mb-2 px-1">
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-red-500 animate-pulse rounded-full"></div>
+                    <span className="text-[10px] text-accent-red font-bold uppercase tracking-widest">VISUALIZAÇÃO TÁTICA</span>
+                </div>
+                <h2 className="text-sm font-bold text-white uppercase tracking-tight">{lesson.title}</h2>
+            </div>
+
+            <div className="relative group bg-black border border-wayne-border shadow-lg overflow-hidden aspect-video flex flex-col rounded-sm">
+                {embedUrl ? (
+                    <iframe 
+                        src={embedUrl} 
+                        title={lesson.title}
+                        className="w-full h-full flex-1"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowFullScreen
+                    ></iframe>
+                ) : (
+                    <div className="flex-1 bg-wayne-dark/50 flex items-center justify-center relative">
+                        <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.05)_1px,transparent_1px)] bg-position[40px_40px] opacity-20 pointer-events-none"></div>
+                        <div className="text-center z-10 p-6">
+                            <Play size={48} className="text-accent-blue mx-auto mb-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+                            <p className="text-text-muted text-xs tracking-[0.2em] uppercase">Sinal de Vídeo Perdido</p>
+                            <p className="text-[10px] text-accent-red mt-2">INSIRA UM LINK VÁLIDO PARA ACESSAR O FEED</p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="bg-wayne-panel border-t border-wayne-border p-3 z-30 flex justify-between items-center">
+                    <div className="flex gap-4 items-center">
+                        <div className="text-[10px] font-mono text-accent-blue">
+                            {embedUrl ? "FEED: ONLINE [SECURE]" : "FEED: OFFLINE"}
+                        </div>
+                    </div>
+                    <TacticalButton onClick={onComplete} className="py-1 px-3 text-[10px]">
+                        Concluir Módulo
+                    </TacticalButton>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- DADOS ---
 const defaultWorkoutPlans: WorkoutPlans = {
     hipertrofia: { 
-        segunda: { 
-            name: 'COSTAS, BÍCEPS & MANOPLA', 
-            exercises: [
-                { name: 'Barra Fixa (Pull-ups)', sets: '4x Falha', weight: 'Foco: Largura' }, 
-                { name: 'Puxada Alta Aberta', sets: '4x 12', weight: 'Cotovelos p/ baixo' }, 
-                { name: 'Remada Curvada', sets: '4x 10', weight: 'Carga' }, 
-                { name: 'Rosca Direta', sets: '3x 10', weight: 'Barra W' }, 
-                { name: 'Rosca Inversa (Antebraço)', sets: '4x 12', weight: 'Pegada Pronada' }, 
-                { name: 'Flexão de Punho', sets: '3x 20', weight: 'Antebraço' }
-            ] 
-        }, 
-        terca: { 
-            name: 'INFERIOR A (Agilidade)', 
-            exercises: [
-                { name: 'Levantamento Terra', sets: '4x 6', weight: 'Força Base' }, 
-                { name: 'Agachamento Búlgaro', sets: '3x 10', weight: 'Halteres' }, 
-                { name: 'Cadeira Extensora', sets: '3x 15', weight: 'Pump' }, 
-                { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Bike Leve (LISS)' }
-            ] 
-        }, 
-        quarta: { 
-            name: 'OMBROS (Capacete)', 
-            exercises: [
-                { name: 'Desenv. Máquina/Halter', sets: '4x 10', weight: 'Pesado' }, 
-                { name: 'Elevação Lateral', sets: '5x 15', weight: 'Volume Alto' }, 
-                { name: 'Crucifixo Inverso', sets: '4x 15', weight: 'Posterior' }, 
-                { name: 'Encolhimento', sets: '4x 12', weight: 'Trapézio' }, 
-                { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Abs com Carga' }
-            ] 
-        }, 
-        quinta: { 
-            name: 'INFERIOR B (Força)', 
-            exercises: [
-                { name: 'Agachamento Livre', sets: '5x 5', weight: 'Carga MAX' }, 
-                { name: 'Leg Press 45', sets: '4x 10', weight: 'Amplitude' }, 
-                { name: 'Mesa Flexora', sets: '4x 12', weight: 'Posterior' }, 
-                { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Caminhada (LISS)' }
-            ] 
-        }, 
-        sexta: { 
-            name: 'PEITO & TRÍCEPS', 
-            exercises: [
-                { name: 'Supino Inclinado', sets: '4x 8', weight: 'Foco Superior' }, 
-                { name: 'Crossover / Peck Deck', sets: '3x 12', weight: 'Esmaga' }, 
-                { name: 'Tríceps Corda', sets: '4x 12', weight: 'Polia' }, 
-                { name: 'Tríceps Testa', sets: '3x 10', weight: 'Barra W' }, 
-                { name: 'Elev. Lateral (Extra)', sets: '4x 15', weight: 'Pump Final' }
-            ] 
-        }, 
-        sabado: { 
-            name: 'ARKHAM: Armadura', 
-            exercises: [
-                { name: 'Desenv. Arnold', sets: '4x 10 reps', weight: 'Halteres' }, 
-                { name: 'Elevação Lateral', sets: '4x 15 (Dropset)', weight: 'Falha Total' }, 
-                { name: 'Tríceps Testa', sets: '4x 12 reps', weight: 'Barra W' }, 
-                { name: 'Supino Fechado', sets: '3x 10 reps', weight: 'Explosivo' }, 
-                { name: 'Clean & Press', sets: '3x 12 reps', weight: 'Halteres' },
-                { name: 'Tríceps Coice', sets: '3x 15 reps', weight: 'Controle' }
-            ] 
-        }, 
+        segunda: { name: 'COSTAS, BÍCEPS & MANOPLA', exercises: [{ name: 'Barra Fixa (Pull-ups)', sets: '4x Falha', weight: 'Foco: Largura' }, { name: 'Puxada Alta Aberta', sets: '4x 12', weight: 'Cotovelos p/ baixo' }, { name: 'Remada Curvada', sets: '4x 10', weight: 'Carga' }, { name: 'Rosca Direta', sets: '3x 10', weight: 'Barra W' }, { name: 'Rosca Inversa (Antebraço)', sets: '4x 12', weight: 'Pegada Pronada' }, { name: 'Flexão de Punho', sets: '3x 20', weight: 'Antebraço' }] }, 
+        terca: { name: 'INFERIOR A (Agilidade)', exercises: [{ name: 'Levantamento Terra', sets: '4x 6', weight: 'Força Base' }, { name: 'Agachamento Búlgaro', sets: '3x 10', weight: 'Halteres' }, { name: 'Cadeira Extensora', sets: '3x 15', weight: 'Pump' }, { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Bike Leve (LISS)' }] }, 
+        quarta: { name: 'OMBROS (Capacete)', exercises: [{ name: 'Desenv. Máquina/Halter', sets: '4x 10', weight: 'Pesado' }, { name: 'Elevação Lateral', sets: '5x 15', weight: 'Volume Alto' }, { name: 'Crucifixo Inverso', sets: '4x 15', weight: 'Posterior' }, { name: 'Encolhimento', sets: '4x 12', weight: 'Trapézio' }, { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Abs com Carga' }] }, 
+        quinta: { name: 'INFERIOR B (Força)', exercises: [{ name: 'Agachamento Livre', sets: '5x 5', weight: 'Carga MAX' }, { name: 'Leg Press 45', sets: '4x 10', weight: 'Amplitude' }, { name: 'Mesa Flexora', sets: '4x 12', weight: 'Posterior' }, { name: 'CHECK-IN EXTRA', sets: '30 min', weight: 'Caminhada (LISS)' }] }, 
+        sexta: { name: 'PEITO & TRÍCEPS', exercises: [{ name: 'Supino Inclinado', sets: '4x 8', weight: 'Foco Superior' }, { name: 'Crossover / Peck Deck', sets: '3x 12', weight: 'Esmaga' }, { name: 'Tríceps Corda', sets: '4x 12', weight: 'Polia' }, { name: 'Tríceps Testa', sets: '3x 10', weight: 'Barra W' }, { name: 'Elev. Lateral (Extra)', sets: '4x 15', weight: 'Pump Final' }] }, 
+        sabado: { name: 'ARKHAM: Armadura', exercises: [{ name: 'Desenv. Arnold', sets: '4x 10 reps', weight: 'Halteres' }, { name: 'Elevação Lateral', sets: '4x 15 (Dropset)', weight: 'Falha Total' }, { name: 'Tríceps Testa', sets: '4x 12 reps', weight: 'Barra W' }, { name: 'Supino Fechado', sets: '3x 10 reps', weight: 'Explosivo' }, { name: 'Clean & Press', sets: '3x 12 reps', weight: 'Halteres' }, { name: 'Tríceps Coice', sets: '3x 15 reps', weight: 'Controle' }] }, 
         domingo: { name: 'Descanso Tático', exercises: [{ name: 'Mobilidade', sets: '20min', weight: 'Foam Roller' }, { name: 'Caminhada', sets: '30min', weight: 'Leve (Opcional)' }] } 
     },
     forca: { segunda: { name: 'Upper', exercises: [] }, terca: { name: 'Lower', exercises: [] }, quarta: { name: 'Rest', exercises: [] }, quinta: { name: 'Upper', exercises: [] }, sexta: { name: 'Lower', exercises: [] }, sabado: { name: 'Rest', exercises: [] }, domingo: { name: 'Rest', exercises: [] } },
@@ -126,22 +145,51 @@ const defaultLibrary = [ { id: 1, title: 'A Arte da Guerra', author: 'Sun Tzu', 
 const defaultHabits = [ { id: 1, text: 'Vacuum Matinal', completed: false }, { id: 2, text: 'Comer pós-cardio', completed: false }, { id: 3, text: 'Dormir 8h', completed: false } ];
 const defaultMissions: Mission[] = [ { id: 1, title: 'Vencer Ranking Gymrats', status: 'em_curso', priority: 'alta' }, { id: 2, title: 'Ombro Capacete', status: 'em_curso', priority: 'alta' } ];
 
+// DADOS DOS CURSOS ATUALIZADOS COM O LINK DO USUÁRIO
+const defaultCourses: Course[] = [
+    {
+        id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco, controle emocional e mentalidade de guerra. A mente é a primeira arma do arsenal.", progress: 15,
+        modules: [
+            { id: 1, title: "FASE 1: BLINDAGEM", lessons: [ 
+                // AQUI ESTÁ O LINK QUE VOCÊ PEDIU INSERIDO NO CÓDIGO PADRÃO
+                { id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }, 
+                { id: 102, title: "Gerenciamento de Crise", duration: "15:30", completed: false, type: "video" } 
+            ] },
+            { id: 2, title: "FASE 2: ATAQUE", lessons: [ { id: 201, title: "Deep Work Tático", duration: "20:00", completed: false, type: "video" } ] }
+        ]
+    },
+    {
+        id: 2, title: "OPERAÇÕES FINANCEIRAS", description: "Estratégias de investimento e alocação de recursos para sustentabilidade operacional a longo prazo.", progress: 0,
+        modules: [ { id: 1, title: "FASE 1: FUNDAMENTOS", lessons: [ { id: 301, title: "Alocação de Ativos", duration: "10:00", completed: false, type: "video" } ] } ]
+    }
+];
+
 export default function BatmanWorkoutDashboard() {
   const [loading, setLoading] = useState(true);
   
-  // STATES
+  // STATES BASE
   const [userProfile, setUserProfile] = useState(() => { const s = localStorage.getItem('bat_profile_v2'); return s ? JSON.parse(s) : { name: '', weight: '', goal: 'hipertrofia' }; });
   const [currentView, setCurrentView] = useState(() => userProfile.name ? 'dashboard' : 'quiz');
-  
   const [workoutData, setWorkoutData] = useState<WorkoutPlans>(() => { const s = localStorage.getItem('bat_workouts'); return s ? JSON.parse(s) : defaultWorkoutPlans; });
   const [routine, setRoutine] = useState<RoutineItem[]>(() => { const s = localStorage.getItem('bat_routine'); return s ? JSON.parse(s) : defaultRoutine; });
   const [weightHistory, setWeightHistory] = useState(() => { const s = localStorage.getItem('bat_weight_history'); return s ? JSON.parse(s) : [{date:'01/01', weight:70}]; });
-  
-  // STATES EXTRAS
   const [missions, setMissions] = useState<Mission[]>(() => { const s = localStorage.getItem('bat_missions'); return s ? JSON.parse(s) : defaultMissions; });
   const [habits, setHabits] = useState(() => { const s = localStorage.getItem('bat_habits'); return s ? JSON.parse(s) : defaultHabits; });
   const [library, setLibrary] = useState(() => { const s = localStorage.getItem('bat_library'); return s ? JSON.parse(s) : defaultLibrary; });
   const [journal, setJournal] = useState(() => { const s = localStorage.getItem('bat_journal'); return s ? JSON.parse(s) : []; });
+  
+  // STATES CURSOS & PROTOCOLOS
+  const [courses, setCourses] = useState<Course[]>(() => { const s = localStorage.getItem('bat_courses'); return s ? JSON.parse(s) : defaultCourses; });
+  const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  
+  // STATES EDICAO
+  const [isDescModalOpen, setIsDescModalOpen] = useState(false);
+  const [descForm, setDescForm] = useState('');
+  
+  // STATE EDICAO DE AULA
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [lessonForm, setLessonForm] = useState({ title: '', videoUrl: '', duration: '' });
 
   // UI States
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
@@ -154,8 +202,9 @@ export default function BatmanWorkoutDashboard() {
   const [newHabitText, setNewHabitText] = useState('');
   const [newMissionText, setNewMissionText] = useState('');
   const [journalInput, setJournalInput] = useState('');
-  const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
-  const [newBook, setNewBook] = useState({ title: '', author: '' });
+  const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [editingBookId, setEditingBookId] = useState<number | null>(null);
+  const [bookForm, setBookForm] = useState({ title: '', author: '' });
 
   // Handlers
   const currentGoal: UserGoal = (userProfile.goal as UserGoal) || 'hipertrofia';
@@ -172,6 +221,7 @@ export default function BatmanWorkoutDashboard() {
   useEffect(() => { localStorage.setItem('bat_habits', JSON.stringify(habits)); }, [habits]);
   useEffect(() => { localStorage.setItem('bat_library', JSON.stringify(library)); }, [library]);
   useEffect(() => { localStorage.setItem('bat_journal', JSON.stringify(journal)); }, [journal]);
+  useEffect(() => { localStorage.setItem('bat_courses', JSON.stringify(courses)); }, [courses]);
 
   // Funções de Edição
   const handleExerciseChange = (exIndex: number, field: keyof Exercise, value: string) => { 
@@ -179,24 +229,9 @@ export default function BatmanWorkoutDashboard() {
       u[currentGoal][selectedDay].exercises[exIndex][field] = value; 
       setWorkoutData(u); 
   };
-  const addNewExercise = () => { 
-      const u = JSON.parse(JSON.stringify(workoutData));
-      u[currentGoal][selectedDay].exercises.push({ name: 'Novo Exercício', sets: '3x10', weight: 'Carga' }); 
-      setWorkoutData(u); 
-  };
-  const removeExercise = (index: number) => { 
-      const u = JSON.parse(JSON.stringify(workoutData));
-      u[currentGoal][selectedDay].exercises.splice(index, 1); 
-      setWorkoutData(u); 
-  };
-  const handleAddWeight = () => { 
-      if(newWeightInput) { 
-          setWeightHistory([...weightHistory, {date: new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), weight: parseFloat(newWeightInput)}]); 
-          setUserProfile({...userProfile, weight: newWeightInput}); setNewWeightInput(''); 
-      }
-  };
-
-  // Funções Extras
+  const addNewExercise = () => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.push({ name: 'Novo Exercício', sets: '3x10', weight: 'Carga' }); setWorkoutData(u); };
+  const removeExercise = (index: number) => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.splice(index, 1); setWorkoutData(u); };
+  const handleAddWeight = () => { if(newWeightInput) { setWeightHistory([...weightHistory, {date: new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), weight: parseFloat(newWeightInput)}]); setUserProfile({...userProfile, weight: newWeightInput}); setNewWeightInput(''); }};
   const toggleHabit = (id: number) => setHabits(habits.map((h:any) => h.id === id ? { ...h, completed: !h.completed } : h));
   const addHabit = () => { if (newHabitText) { setHabits([...habits, { id: Date.now(), text: newHabitText, completed: false }]); setNewHabitText(''); } };
   const addMission = () => { if (newMissionText) { setMissions([...missions, { id: Date.now(), title: newMissionText, status: 'intel', priority: 'normal' }]); setNewMissionText(''); } };
@@ -209,17 +244,68 @@ export default function BatmanWorkoutDashboard() {
       if (newIndex < 0) newIndex = 0; if (newIndex >= statusFlow.length) newIndex = statusFlow.length - 1; 
       setMissions(missions.map(m => m.id === id ? { ...m, status: statusFlow[newIndex] } : m)); 
   };
-  const handleAddBook = () => { if(newBook.title) { setLibrary([...library, { ...newBook, id: Date.now(), status: 'lido' }]); setIsAddBookModalOpen(false); } };
+  
+  // Livros
+  const openAddBookModal = () => { setEditingBookId(null); setBookForm({ title: '', author: '' }); setIsBookModalOpen(true); };
+  const openEditBookModal = (book: any) => { setEditingBookId(book.id); setBookForm({ title: book.title, author: book.author }); setIsBookModalOpen(true); };
+  const handleSaveBook = () => {
+      if (!bookForm.title) return;
+      if (editingBookId) { setLibrary(library.map((b: any) => b.id === editingBookId ? { ...b, title: bookForm.title, author: bookForm.author } : b)); } 
+      else { setLibrary([...library, { ...bookForm, id: Date.now(), status: 'lido' }]); }
+      setIsBookModalOpen(false);
+  };
   const handleRemoveBook = (id: number) => setLibrary(library.filter((b:any) => b.id !== id));
   const addJournalEntry = () => { if(journalInput) { setJournal([{id: Date.now(), date: new Date().toLocaleDateString(), content: journalInput}, ...journal]); setJournalInput(''); }};
+  
+  // Protocolos (Descrição)
+  const openDescModal = () => {
+      const currentCourse = courses.find(c => c.id === activeCourseId);
+      if(currentCourse) { setDescForm(currentCourse.description); setIsDescModalOpen(true); }
+  };
+  const handleSaveDesc = () => {
+      setCourses(courses.map(c => c.id === activeCourseId ? { ...c, description: descForm } : c));
+      setIsDescModalOpen(false);
+  };
 
-  // --- Função de Reset Tático ---
+  // Protocolos (Edição de Aula - Video)
+  const openLessonModal = (lesson: Lesson) => {
+      setActiveLesson(lesson);
+      setLessonForm({ title: lesson.title, videoUrl: lesson.videoUrl || '', duration: lesson.duration });
+      setIsLessonModalOpen(true);
+  };
+  const handleSaveLesson = () => {
+      if(!activeCourseId || !activeLesson) return;
+      const updatedCourses = courses.map(c => {
+          if (c.id === activeCourseId) {
+              const updatedModules = c.modules.map(m => ({
+                  ...m,
+                  lessons: m.lessons.map(l => l.id === activeLesson.id ? { ...l, ...lessonForm } : l)
+              }));
+              return { ...c, modules: updatedModules };
+          }
+          return c;
+      });
+      setCourses(updatedCourses);
+      setActiveLesson({ ...activeLesson, ...lessonForm });
+      setIsLessonModalOpen(false);
+  };
+
+  const completeLesson = (courseId: number, lessonId: number) => {
+      const updatedCourses = courses.map(c => {
+          if(c.id === courseId) {
+              const updatedModules = c.modules.map(m => ({ ...m, lessons: m.lessons.map(l => l.id === lessonId ? {...l, completed: true} : l) }));
+              const allLessons = updatedModules.flatMap(m => m.lessons);
+              const progress = Math.round((allLessons.filter(l => l.completed).length / allLessons.length) * 100);
+              return { ...c, modules: updatedModules, progress };
+          }
+          return c;
+      });
+      setCourses(updatedCourses);
+  };
+
   const resetToFactorySettings = () => {
       if(confirm("COMANDO: Carregar Protocolo Ben Affleck 2.0 (Com Antebraço & Novo Sábado)?")) {
-          setWorkoutData(defaultWorkoutPlans);
-          setRoutine(defaultRoutine);
-          setMissions(defaultMissions);
-          setHabits(defaultHabits);
+          setWorkoutData(defaultWorkoutPlans); setRoutine(defaultRoutine); setMissions(defaultMissions); setHabits(defaultHabits); setCourses(defaultCourses);
           alert("Protocolo Atualizado.");
       }
   };
@@ -281,9 +367,9 @@ export default function BatmanWorkoutDashboard() {
 
         {/* NAVEGAÇÃO COMPLETA */}
         <nav className="flex gap-1 mb-8 overflow-x-auto pb-2 border-b border-wayne-border scrollbar-hide">
-          {['dashboard', 'routine', 'stats', 'checklist', 'missions', 'library', 'journal'].map((tab: any) => (
+          {['dashboard', 'routine', 'protocols', 'stats', 'checklist', 'missions', 'library', 'journal'].map((tab: any) => (
             <button key={tab} onClick={() => setCurrentTab(tab)} className={`px-6 py-3 text-xs font-bold uppercase transition-all border-b-2 tracking-widest whitespace-nowrap ${currentTab === tab ? 'border-accent-blue text-accent-blue bg-accent-blue/5' : 'border-transparent text-text-muted hover:text-white'}`}>
-                {tab === 'routine' ? 'AGENDA' : tab}
+                {tab === 'protocols' ? 'PROTOCOLOS' : tab === 'routine' ? 'AGENDA' : tab}
             </button>
           ))}
         </nav>
@@ -365,6 +451,121 @@ export default function BatmanWorkoutDashboard() {
                 </TechCard>
              </div>
           </div>
+        )}
+
+        {/* --- ABA DE PROTOCOLOS (CURSOS) --- */}
+        {currentTab === 'protocols' && (
+            <div className="max-w-5xl mx-auto animate-in fade-in duration-500">
+                {activeCourseId === null ? (
+                    // VISÃO GERAL DE CURSOS
+                    <div className="space-y-8">
+                        <div className="flex justify-between items-center">
+                             <h2 className="text-2xl font-bold text-white flex items-center gap-3 uppercase"><Database size={24} className="text-accent-blue" /> Protocolos de Treinamento</h2>
+                             <div className="text-xs font-bold bg-wayne-panel border border-wayne-border px-3 py-1 text-text-muted">ACESSO NÍVEL 5</div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {courses.map(course => (
+                                <TechCard key={course.id} className="cursor-pointer hover:border-accent-blue transition-all" title={course.title} icon={Lock}>
+                                    <div onClick={() => { setActiveCourseId(course.id); setActiveLesson(course.modules[0].lessons[0]); }} className="space-y-4">
+                                        <p className="text-sm text-text-muted leading-relaxed font-mono pb-4 border-b border-wayne-border/50">{course.description}</p>
+                                        
+                                        <div className="flex justify-between text-[10px] font-bold uppercase mb-1 mt-4">
+                                            <span className="text-accent-blue">PROGRESSO</span>
+                                            <span className="text-white">{course.progress}%</span>
+                                        </div>
+                                        <div className="w-full h-2 bg-wayne-dark border border-wayne-border rounded-full overflow-hidden">
+                                            <div className="h-full bg-accent-blue" style={{width: `${course.progress}%`}}></div>
+                                        </div>
+                                        
+                                        <div className="flex justify-end pt-2">
+                                            <TacticalButton className="py-2 px-4 text-[10px]" variant="secondary">ACESSAR DADOS</TacticalButton>
+                                        </div>
+                                    </div>
+                                </TechCard>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    // VISÃO DO PLAYER (AULA)
+                    <div className="animate-in fade-in duration-300">
+                         <button onClick={() => setActiveCourseId(null)} className="mb-6 text-xs font-bold text-text-muted hover:text-white flex items-center gap-2 uppercase tracking-widest transition-colors group">
+                            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform"/> Retornar à Base
+                        </button>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2">
+                                {activeLesson && (
+                                    <MilitaryVideoPlayer 
+                                        lesson={activeLesson} 
+                                        onComplete={() => activeCourseId && completeLesson(activeCourseId, activeLesson.id)} 
+                                    />
+                                )}
+                                <div className="relative">
+                                    <div className="absolute top-4 right-4 z-20">
+                                        <button onClick={openDescModal} className="text-text-muted hover:text-accent-blue transition-colors">
+                                            <Edit3 size={16}/>
+                                        </button>
+                                    </div>
+                                    <TechCard title="Descrição do Arquivo" icon={FileText}>
+                                        <p className="text-sm text-text-muted leading-relaxed font-mono pr-6">
+                                            {courses.find(c => c.id === activeCourseId)?.description}
+                                        </p>
+                                    </TechCard>
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-1">
+                                <TechCard title="Índice de Arquivos" icon={Database} className="h-full sticky top-24">
+                                    <div className="overflow-y-auto max-h-[150] custom-scrollbar pr-2">
+                                        {courses.find(c => c.id === activeCourseId)?.modules.map((module) => (
+                                            <div key={module.id} className="mb-6">
+                                                <div className="text-[10px] font-bold text-text-muted border-b border-wayne-border pb-2 uppercase tracking-[0.2em] mb-3">
+                                                    {module.title}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {module.lessons.map(lesson => (
+                                                        <div 
+                                                            key={lesson.id} 
+                                                            onClick={() => setActiveLesson(lesson)}
+                                                            className={`
+                                                                flex items-center justify-between p-3 cursor-pointer border transition-all rounded-sm group relative
+                                                                ${activeLesson?.id === lesson.id 
+                                                                    ? 'border-accent-blue bg-accent-blue/10' 
+                                                                    : lesson.completed ? 'border-wayne-border/50 opacity-60 bg-wayne-dark' : 'border-wayne-border hover:border-accent-blue/50 bg-wayne-dark'}
+                                                            `}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`
+                                                                    w-4 h-4 rounded-sm border flex items-center justify-center
+                                                                    ${lesson.completed ? 'bg-accent-blue border-accent-blue text-black' : 'border-text-muted text-transparent'}
+                                                                `}>
+                                                                    <Check size={10} strokeWidth={3} />
+                                                                </div>
+                                                                <div>
+                                                                    <div className={`text-xs font-bold uppercase leading-tight ${activeLesson?.id === lesson.id ? 'text-white' : 'text-text-muted group-hover:text-white'}`}>{lesson.title}</div>
+                                                                    <div className="text-[9px] text-text-muted font-mono mt-1 flex items-center gap-1"><Video size={8}/> {lesson.duration}</div>
+                                                                </div>
+                                                            </div>
+                                                            {/* Botão de Editar URL da Aula */}
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); openLessonModal(lesson); }} 
+                                                                className={`opacity-0 group-hover:opacity-100 hover:text-accent-blue text-text-muted p-1 ${activeLesson?.id === lesson.id ? 'opacity-100' : ''}`}
+                                                            >
+                                                                <Edit3 size={14}/>
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </TechCard>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         )}
 
         {currentTab === 'routine' && (
@@ -482,12 +683,15 @@ export default function BatmanWorkoutDashboard() {
              <div className="animate-in fade-in duration-500">
                 <div className="flex justify-between items-center mb-10">
                     <h2 className="text-2xl font-bold text-white flex items-center gap-3 uppercase"><Library size={24} className="text-accent-purple" /> Biblioteca</h2>
-                    <TacticalButton onClick={() => setIsAddBookModalOpen(true)} className="flex items-center gap-2"><Plus size={16}/> Inserir Dados</TacticalButton>
+                    <TacticalButton onClick={openAddBookModal} className="flex items-center gap-2"><Plus size={16}/> Inserir Dados</TacticalButton>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {library.map((book: any) => (
                         <div key={book.id} className="bg-wayne-panel border border-wayne-border rounded-sm p-6 group hover:border-accent-blue transition-all relative flex flex-col justify-between h-48 hover:shadow-lg">
-                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={() => handleRemoveBook(book.id)} className="text-text-muted hover:text-accent-red"><X size={16}/></button></div>
+                            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => openEditBookModal(book)} className="text-text-muted hover:text-accent-blue"><Edit3 size={16}/></button>
+                                <button onClick={() => handleRemoveBook(book.id)} className="text-text-muted hover:text-accent-red"><Trash2 size={16}/></button>
+                            </div>
                             <div>
                                 <BookOpen size={24} className="text-text-muted mb-4 group-hover:text-accent-blue transition-colors"/>
                                 <h4 className="text-lg font-bold text-white mb-1 line-clamp-2 leading-tight uppercase">{book.title}</h4>
@@ -543,16 +747,57 @@ export default function BatmanWorkoutDashboard() {
         </div>
         )}
 
-        {/* MODAL NOVO LIVRO */}
-        {isAddBookModalOpen && (
+        {/* MODAL LIVRO (CRIAR/EDITAR) */}
+        {isBookModalOpen && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-hud">
             <div className="bg-wayne-panel border border-accent-blue rounded-sm w-full max-w-md p-6 space-y-4 shadow-2xl">
-                <h3 className="font-bold text-white uppercase tracking-widest">Nova Entrada</h3>
-                <input type="text" placeholder="Título" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-4 text-white outline-none focus:border-accent-blue" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})}/>
-                <input type="text" placeholder="Autor" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-4 text-white outline-none focus:border-accent-blue" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})}/>
+                <h3 className="font-bold text-white uppercase tracking-widest">{editingBookId ? 'Editar Registro' : 'Nova Entrada'}</h3>
+                <input type="text" placeholder="Título" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-4 text-white outline-none focus:border-accent-blue" value={bookForm.title} onChange={e => setBookForm({...bookForm, title: e.target.value})}/>
+                <input type="text" placeholder="Autor" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-4 text-white outline-none focus:border-accent-blue" value={bookForm.author} onChange={e => setBookForm({...bookForm, author: e.target.value})}/>
                 <div className="flex gap-4">
-                    <TacticalButton onClick={handleAddBook} className="flex-1">Confirmar</TacticalButton>
-                    <button onClick={() => setIsAddBookModalOpen(false)} className="text-text-muted uppercase text-xs font-bold">Cancelar</button>
+                    <TacticalButton onClick={handleSaveBook} className="flex-1">Confirmar</TacticalButton>
+                    <button onClick={() => setIsBookModalOpen(false)} className="text-text-muted uppercase text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        )}
+
+        {/* MODAL DESCRIÇÃO CURSO */}
+        {isDescModalOpen && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-hud">
+            <div className="bg-wayne-panel border border-accent-blue rounded-sm w-full max-w-2xl p-6 space-y-4 shadow-2xl">
+                <h3 className="font-bold text-white uppercase tracking-widest">Atualizar Intel da Missão</h3>
+                <textarea className="w-full h-48 bg-wayne-dark border border-wayne-border rounded-sm p-4 text-white outline-none focus:border-accent-blue resize-none" value={descForm} onChange={e => setDescForm(e.target.value)}/>
+                <div className="flex gap-4">
+                    <TacticalButton onClick={handleSaveDesc} className="flex-1">Salvar Alterações</TacticalButton>
+                    <button onClick={() => setIsDescModalOpen(false)} className="text-text-muted uppercase text-xs font-bold">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        )}
+
+        {/* MODAL EDITAR AULA (VIDEO URL) */}
+        {isLessonModalOpen && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-hud">
+            <div className="bg-wayne-panel border border-accent-blue rounded-sm w-full max-w-md p-6 space-y-4 shadow-2xl">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-bold text-white uppercase tracking-widest flex items-center gap-2"><Link size={16} /> Configurar Fonte de Vídeo</h3>
+                </div>
+                <div>
+                    <label className="text-xs text-accent-blue font-bold uppercase tracking-wider block mb-2">Título da Aula</label>
+                    <input type="text" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={lessonForm.title} onChange={e => setLessonForm({...lessonForm, title: e.target.value})}/>
+                </div>
+                <div>
+                    <label className="text-xs text-accent-blue font-bold uppercase tracking-wider block mb-2">URL do Vídeo (YouTube)</label>
+                    <input type="text" placeholder="https://youtube.com/watch?v=..." className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue text-xs font-mono" value={lessonForm.videoUrl} onChange={e => setLessonForm({...lessonForm, videoUrl: e.target.value})}/>
+                </div>
+                <div>
+                    <label className="text-xs text-accent-blue font-bold uppercase tracking-wider block mb-2">Duração</label>
+                    <input type="text" placeholder="00:00" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={lessonForm.duration} onChange={e => setLessonForm({...lessonForm, duration: e.target.value})}/>
+                </div>
+                <div className="flex gap-4 pt-2">
+                    <TacticalButton onClick={handleSaveLesson} className="flex-1">Salvar Configuração</TacticalButton>
+                    <button onClick={() => setIsLessonModalOpen(false)} className="text-text-muted uppercase text-xs font-bold">Cancelar</button>
                 </div>
             </div>
         </div>
