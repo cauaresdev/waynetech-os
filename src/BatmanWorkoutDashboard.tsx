@@ -122,7 +122,7 @@ export default function BatmanWorkoutDashboard() {
     const connectToArkham = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:3333/workouts', {
+            const response = await fetch('https://arkham-backend.onrender.com/workouts', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -140,7 +140,7 @@ export default function BatmanWorkoutDashboard() {
       setAuthError('');
       const endpoint = isRegistering ? '/register' : '/login';
       try {
-          const res = await fetch(`http://localhost:3333${endpoint}`, {
+          const res = await fetch(`https://arkham-backend.onrender.com${endpoint}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(authForm)
@@ -174,7 +174,7 @@ export default function BatmanWorkoutDashboard() {
       if (!exercise.id || !token) return;
       setSavingStatus('saving');
       try {
-          await fetch(`http://localhost:3333/exercises/${exercise.id}`, {
+          await fetch(`https://arkham-backend.onrender.com/exercises/${exercise.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify(exercise)
