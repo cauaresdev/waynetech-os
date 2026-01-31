@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Book, Save } from 'lucide-react';
 
 // 👇👇👇 SUA URL DO RENDER AQUI 👇👇👇
-const API_URL = 'https://arkham-api-seu-link.onrender.com';
+const API_URL = 'https://arkham-backend.onrender.com';
 
 interface Entry {
   id: number;
