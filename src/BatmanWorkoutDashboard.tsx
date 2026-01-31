@@ -5,6 +5,9 @@ import {
     Edit3, Activity, Target, Lock, Check, ArrowLeft, Trash2, Shield, Play, LogOut
 } from 'lucide-react';
 
+import MissionsTab from './MissionsTab';
+
+
 // --- TIPOS ---
 type AppTab = 'dashboard' | 'routine' | 'protocols' | 'stats' | 'checklist' | 'missions' | 'journal' | 'library';
 interface Exercise { id?: number; name: string; sets: string; weight: string; }
@@ -361,6 +364,25 @@ export default function BatmanWorkoutDashboard() {
                  )}
             </div>
         )}
+
+        {/* 👇👇👇 ADIÇÃO DA ABA DE MISSÕES AQUI 👇👇👇 */}
+        {currentTab === 'missions' && (
+            <div className="animate-in fade-in duration-500">
+                {/* Passamos o token para o componente poder salvar no banco de dados */}
+                <MissionsTab token={token || ''} />
+            </div>
+        )}
+
+        {/* Placeholders para as futuras abas (Journal, Stats, etc) para não ficarem em branco */}
+        {(currentTab === 'journal' || currentTab === 'stats' || currentTab === 'checklist' || currentTab === 'library') && (
+            <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted">
+                <div className="text-center">
+                    <Lock size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p>
+                </div>
+            </div>
+        )}
+
       </div>
     </div>
   );
