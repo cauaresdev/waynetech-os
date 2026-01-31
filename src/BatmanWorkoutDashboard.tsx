@@ -105,8 +105,15 @@ export default function BatmanWorkoutDashboard() {
   const [selectedDay, setSelectedDay] = useState<WorkoutDay>('segunda');
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
 
+  // --- ZONA DE SEGURANÇA ---
   const currentGoal: UserGoal = (userProfile.goal as UserGoal) || 'hipertrofia';
-  const currentWorkout = workoutData[currentGoal][selectedDay]; 
+  
+  // 1. Define um plano seguro. Se o dado do servidor (workoutData) falhar, usa o padrão (defaultWorkoutPlans)
+  const safePlan = workoutData[currentGoal] ? workoutData[currentGoal] : defaultWorkoutPlans[currentGoal];
+  
+  // 2. Define o treino seguro usando o plano seguro
+  const currentWorkout = safePlan?.[selectedDay] || { name: 'Carregando...', exercises: [] };
+  
   const imc = (parseFloat(userProfile.weight) && parseFloat(userProfile.height)) ? (parseFloat(userProfile.weight) / ((parseFloat(userProfile.height)/100)**2)).toFixed(1) : 'N/A';
 
   // --- EFEITO DE CARREGAMENTO (SÓ RODA SE TIVER TOKEN) ---
@@ -273,7 +280,7 @@ export default function BatmanWorkoutDashboard() {
              <div className="lg:col-span-2">
                 <TechCard title="Protocolo de Treino" icon={Dumbbell} subtitle="Sequência de Combate">
                     <div className="flex overflow-x-auto gap-2 mb-6 pb-2">
-                        {Object.keys(workoutData[currentGoal]).map((day: any) => (
+                        {Object.keys(safePlan).map((day: any) => (
                             <button key={day} onClick={() => setSelectedDay(day)} className={`px-4 py-2 rounded-sm text-[10px] font-bold uppercase border transition-all tracking-wider ${selectedDay === day ? 'bg-accent-blue text-black border-accent-blue' : 'bg-wayne-dark text-text-muted border-wayne-border hover:border-accent-blue/50'}`}>{day.substring(0,3)}</button>
                         ))}
                     </div>
