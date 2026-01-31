@@ -6,7 +6,9 @@ import {
 } from 'lucide-react';
 
 import MissionsTab from './MissionsTab';
-
+import ChecklistTab from './ChecklistTab';
+import JournalTab from './JournalTab';
+// Mantenha o import MissionsTab ...
 
 // --- TIPOS ---
 type AppTab = 'dashboard' | 'routine' | 'protocols' | 'stats' | 'checklist' | 'missions' | 'journal' | 'library';
@@ -374,13 +376,32 @@ export default function BatmanWorkoutDashboard() {
         )}
 
         {/* Placeholders para as futuras abas (Journal, Stats, etc) para não ficarem em branco */}
-        {(currentTab === 'journal' || currentTab === 'stats' || currentTab === 'checklist' || currentTab === 'library') && (
-            <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted">
-                <div className="text-center">
-                    <Lock size={48} className="mx-auto mb-4 opacity-50" />
-                    <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p>
+       {currentTab === 'checklist' && (
+            <div className="animate-in fade-in duration-500">
+                 <ChecklistTab token={token || ''} />
+            </div>
+        )}
+
+        {currentTab === 'journal' && (
+            <div className="animate-in fade-in duration-500">
+                 <JournalTab token={token || ''} />
+            </div>
+        )}
+        
+        {currentTab === 'library' && (
+            <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted bg-wayne-panel border border-wayne-border rounded-sm">
+                <div className="text-center p-8">
+                    <div className="text-4xl mb-4">📚</div>
+                    <h3 className="text-xl text-white font-bold mb-2">BAT-COMPUTER DATABASE</h3>
+                    <p className="text-sm">Acesse a aba <strong>PROTOCOLOS</strong> para ver os cursos de combate mental.</p>
+                    <p className="text-xs mt-4 text-gray-500">Módulo de enciclopédia de exercícios em construção.</p>
                 </div>
             </div>
+        )}
+
+        {/* Mantenha o placeholder só para Stats se quiser */}
+        {currentTab === 'stats' && (
+             <div className="flex items-center justify-center h-64 text-text-muted"><p>ESTATÍSTICAS EM BREVE</p></div>
         )}
 
       </div>
