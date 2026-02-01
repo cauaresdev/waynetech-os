@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
-  Dumbbell, Plus, Edit3, Lock, Play, LogOut, RefreshCw, 
-  Shield, Trash2, ArrowLeft 
+  Dumbbell, Plus, Edit3, Lock, Play, LogOut, 
+  Shield, Trash2, ArrowLeft, Activity
 } from 'lucide-react';
 
 // IMPORTAÇÃO DAS ABAS
@@ -15,7 +15,7 @@ import JournalTab from './JournalTab';
 // 👇👇👇 CONFIRA SEU LINK AQUI 👇👇👇
 const API_BASE = 'https://arkham-backend.onrender.com'; 
 
-// --- TIPOS E INTERFACES ---
+// --- TIPOS ---
 type AppTab = 'dashboard' | 'routine' | 'protocols' | 'stats' | 'checklist' | 'missions' | 'journal' | 'library';
 interface Exercise { id?: number; name: string; sets: string; weight: string; }
 interface Workout { id?: number; name: string; exercises: Exercise[]; }
@@ -27,22 +27,35 @@ interface Lesson { id: number; title: string; duration: string; completed: boole
 interface Module { id: number; title: string; lessons: Lesson[]; }
 interface Course { id: number; title: string; description: string; progress: number; modules: Module[]; }
 
-// --- COMPONENTES VISUAIS ---
-const TechCard = ({ children, className = "", title, icon: Icon, active = false, subtitle }: any) => (
+// --- DADOS MESTRES (Para Auto-Gênese) ---
+const masterWorkoutPlans: WorkoutPlans = {
+  hipertrofia: {
+    segunda: { name: 'COSTAS, BÍCEPS & MANOPLA', exercises: [{ name: 'Levantamento Terra', sets: '4x6-8', weight: 'BW + 20kg' }, { name: 'Barra Fixa com Peso', sets: '4x8-10', weight: 'BW' }, { name: 'Remada Curvada', sets: '4x10', weight: '60kg' }, { name: 'Rosca Direta W', sets: '3x12', weight: '30kg' }, { name: 'Rosca Martelo', sets: '3x12', weight: '16kg' }] },
+    terca: { name: 'INFERIOR A (Foco Quadríceps)', exercises: [{ name: 'Agachamento Livre', sets: '4x6-8', weight: '80kg' }, { name: 'Leg Press 45', sets: '4x10-12', weight: '200kg' }, { name: 'Extensora', sets: '3x15', weight: 'Placas Max' }, { name: 'Panturrilha em Pé', sets: '5x15', weight: 'BW' }] },
+    quarta: { name: 'OMBROS & TRAPÉZIO', exercises: [{ name: 'Desenvolvimento Militar', sets: '4x8', weight: '40kg' }, { name: 'Elevação Lateral', sets: '4x12', weight: '12kg' }, { name: 'Elevação Frontal', sets: '3x12', weight: '12kg' }, { name: 'Encolhimento', sets: '4x15', weight: '30kg' }] },
+    quinta: { name: 'INFERIOR B (Foco Posterior)', exercises: [{ name: 'Stiff', sets: '4x8-10', weight: '70kg' }, { name: 'Mesa Flexora', sets: '4x12', weight: 'Placas Med' }, { name: 'Cadeira Flexora', sets: '3x15', weight: 'Placas Med' }, { name: 'Passada (Avanço)', sets: '3x20', weight: 'Halteres 10kg' }] },
+    sexta: { name: 'PEITO & TRÍCEPS', exercises: [{ name: 'Supino Reto', sets: '4x6-8', weight: '70kg' }, { name: 'Supino Inclinado Halteres', sets: '4x10', weight: '24kg' }, { name: 'Crossover (Polia)', sets: '3x15', weight: 'Placas' }, { name: 'Tríceps Testa', sets: '4x10', weight: '30kg' }, { name: 'Tríceps Corda', sets: '3x15', weight: 'Placas' }] },
+    sabado: { name: 'ARKHAM: Condicionamento', exercises: [{ name: 'Corrida Intervalada', sets: '20 min', weight: 'Alta Int.' }, { name: 'Saco de Pancada', sets: '5 rounds', weight: '3 min' }, { name: 'Pular Corda', sets: '10 min', weight: 'Constante' }] },
+    domingo: { name: 'Descanso Tático', exercises: [{ name: 'Alongamento Completo', sets: '1x', weight: '20 min' }, { name: 'Mobilidade Articular', sets: '1x', weight: '15 min' }] }
+  },
+  forca: { 
+    segunda: { name: 'Upper Strength', exercises: [{ name: 'Supino', sets: '5x5', weight: '80kg' }] }, terca: { name: 'Lower Strength', exercises: [{ name: 'Agachamento', sets: '5x5', weight: '100kg' }] }, quarta: { name: 'Rest', exercises: [] }, quinta: { name: 'Upper Hyper', exercises: [{ name: 'Militar', sets: '3x10', weight: '40kg' }] }, sexta: { name: 'Lower Hyper', exercises: [{ name: 'Leg Press', sets: '3x12', weight: '200kg' }] }, sabado: { name: 'Rest', exercises: [] }, domingo: { name: 'Rest', exercises: [] } 
+  },
+  definicao: { 
+    segunda: { name: 'Fullbody A', exercises: [{ name: 'Burpees', sets: '3x15', weight: 'BW' }] }, terca: { name: 'Cardio', exercises: [{ name: 'Esteira', sets: '45min', weight: 'Leve' }] }, quarta: { name: 'Fullbody B', exercises: [{ name: 'Flexões', sets: '4x20', weight: 'BW' }] }, quinta: { name: 'Cardio', exercises: [{ name: 'Bike', sets: '45min', weight: 'Mod' }] }, sexta: { name: 'Fullbody C', exercises: [{ name: 'Agachamento Salto', sets: '3x15', weight: 'BW' }] }, sabado: { name: 'HIIT', exercises: [{ name: 'Sprints', sets: '10x', weight: 'Max' }] }, domingo: { name: 'Rest', exercises: [] } 
+  }
+};
+
+const defaultRoutine: RoutineItem[] = [{ id: 1, timeStart: '07:00', timeEnd: '07:15', activity: 'Stomach Vacuum', category: 'training' }];
+const defaultCourses: Course[] = [ { id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco.", progress: 15, modules: [{ id: 1, title: "FASE 1: BLINDAGEM", lessons: [{ id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }] }] } ];
+
+// --- COMPONENTES AUXILIARES ---
+const TechCard = ({ children, className = "", title, icon: Icon, active = false }: any) => (
   <div className={`relative overflow-hidden rounded-sm border transition-all duration-300 ${active ? 'border-accent-blue bg-accent-blue/5' : `border-wayne-border bg-wayne-panel hover:border-accent-blue/30`} backdrop-blur-sm ${className}`}>
     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10"></div>
     <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/10"></div>
     <div className="relative z-10 p-6 h-full flex flex-col">
-      {title && (
-        <div className="flex items-start justify-between mb-6 pb-4 border-b border-wayne-border">
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-[0.2em] flex items-center gap-3 font-hud">
-                {Icon && <Icon size={18} className="text-accent-blue" />} {title}
-            </h3>
-            {subtitle && <p className="text-[10px] text-text-muted uppercase tracking-widest mt-1 ml-8">{subtitle}</p>}
-          </div>
-        </div>
-      )}
+      {title && ( <div className="flex items-start justify-between mb-6 pb-4 border-b border-wayne-border"> <div> <h3 className="text-sm font-bold text-white uppercase tracking-[0.2em] flex items-center gap-3 font-hud"> {Icon && <Icon size={18} className="text-accent-blue" />} {title} </h3> </div> </div> )}
       {children}
     </div>
   </div>
@@ -55,119 +68,17 @@ const TacticalButton = ({ children, onClick, variant = 'primary', className = ""
 );
 
 const MilitaryVideoPlayer = ({ lesson, onComplete }: { lesson: Lesson, onComplete: () => void }) => {
-    const getEmbedUrl = (url: string) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        if (match && match[2].length === 11) return `https://www.youtube.com/embed/${match[2]}`;
-        return null;
-    };
+    const getEmbedUrl = (url: string) => { if (!url) return null; const m = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/); return (m && m[2].length === 11) ? `https://www.youtube.com/embed/${m[2]}` : null; };
     const embedUrl = getEmbedUrl(lesson.videoUrl || '');
     return (
         <div className="w-full font-hud mb-6 animate-in fade-in duration-500">
             <div className="relative group bg-black border border-wayne-border shadow-lg overflow-hidden aspect-video flex flex-col rounded-sm">
-                {embedUrl ? (
-                    <iframe src={embedUrl} title={lesson.title} className="w-full h-full flex-1 border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-                ) : (
-                    <div className="flex-1 bg-wayne-dark/50 flex items-center justify-center relative"><div className="text-center z-10 p-6"><Play size={48} className="text-accent-blue mx-auto mb-4 opacity-50" /><p className="text-[10px] text-accent-red mt-2">SINAL DE VÍDEO PERDIDO</p></div></div>
-                )}
-                <div className="bg-wayne-panel border-t border-wayne-border p-3 z-30 flex justify-between items-center">
-                    <div className="text-[10px] font-mono text-accent-blue">{embedUrl ? "FEED: ONLINE [SECURE]" : "FEED: OFFLINE"}</div>
-                    <TacticalButton onClick={onComplete} className="py-1 px-3 text-[10px]">Concluir</TacticalButton>
-                </div>
+                {embedUrl ? ( <iframe src={embedUrl} title={lesson.title} className="w-full h-full flex-1 border-0" allowFullScreen></iframe> ) : ( <div className="flex-1 bg-wayne-dark/50 flex items-center justify-center relative"><div className="text-center z-10 p-6"><Play size={48} className="text-accent-blue mx-auto mb-4 opacity-50" /><p className="text-[10px] text-accent-red mt-2">SINAL DE VÍDEO PERDIDO</p></div></div> )}
+                <div className="bg-wayne-panel border-t border-wayne-border p-3 z-30 flex justify-between items-center"> <div className="text-[10px] font-mono text-accent-blue">{embedUrl ? "FEED: ONLINE [SECURE]" : "FEED: OFFLINE"}</div> <TacticalButton onClick={onComplete} className="py-1 px-3 text-[10px]">Concluir</TacticalButton> </div>
             </div>
         </div>
     );
 };
-
-// --- DADOS PADRÃO CORRIGIDOS (SEG = COSTAS) ---
-const defaultWorkoutPlans: WorkoutPlans = {
-  hipertrofia: {
-    segunda: { 
-      name: 'COSTAS, BÍCEPS & MANOPLA', 
-      exercises: [
-        { name: 'Levantamento Terra', sets: '4x6-8', weight: 'BW + 20kg' },
-        { name: 'Barra Fixa com Peso', sets: '4x8-10', weight: 'BW' },
-        { name: 'Remada Curvada', sets: '4x10', weight: '60kg' },
-        { name: 'Rosca Direta W', sets: '3x12', weight: '30kg' },
-        { name: 'Rosca Martelo', sets: '3x12', weight: '16kg' }
-      ] 
-    },
-    terca: { 
-      name: 'INFERIOR A (Foco Quadríceps)', 
-      exercises: [
-        { name: 'Agachamento Livre', sets: '4x6-8', weight: '80kg' },
-        { name: 'Leg Press 45', sets: '4x10-12', weight: '200kg' },
-        { name: 'Extensora', sets: '3x15', weight: 'Placas Max' },
-        { name: 'Panturrilha em Pé', sets: '5x15', weight: 'BW' }
-      ] 
-    },
-    quarta: { 
-      name: 'OMBROS & TRAPÉZIO', 
-      exercises: [
-        { name: 'Desenvolvimento Militar', sets: '4x8', weight: '40kg' },
-        { name: 'Elevação Lateral', sets: '4x12', weight: '12kg' },
-        { name: 'Elevação Frontal', sets: '3x12', weight: '12kg' },
-        { name: 'Encolhimento', sets: '4x15', weight: '30kg' }
-      ] 
-    },
-    quinta: { 
-      name: 'INFERIOR B (Foco Posterior)', 
-      exercises: [
-        { name: 'Stiff', sets: '4x8-10', weight: '70kg' },
-        { name: 'Mesa Flexora', sets: '4x12', weight: 'Placas Med' },
-        { name: 'Cadeira Flexora', sets: '3x15', weight: 'Placas Med' },
-        { name: 'Passada (Avanço)', sets: '3x20', weight: 'Halteres 10kg' }
-      ] 
-    },
-    sexta: { 
-      name: 'PEITO & TRÍCEPS', 
-      exercises: [
-        { name: 'Supino Reto', sets: '4x6-8', weight: '70kg' },
-        { name: 'Supino Inclinado Halteres', sets: '4x10', weight: '24kg' },
-        { name: 'Crossover (Polia)', sets: '3x15', weight: 'Placas' },
-        { name: 'Tríceps Testa', sets: '4x10', weight: '30kg' },
-        { name: 'Tríceps Corda', sets: '3x15', weight: 'Placas' }
-      ] 
-    },
-    sabado: { 
-      name: 'ARKHAM: Condicionamento', 
-      exercises: [
-        { name: 'Corrida Intervalada', sets: '20 min', weight: 'Alta Int.' },
-        { name: 'Saco de Pancada', sets: '5 rounds', weight: '3 min' },
-        { name: 'Pular Corda', sets: '10 min', weight: 'Constante' }
-      ] 
-    },
-    domingo: { 
-      name: 'Descanso Tático', 
-      exercises: [
-        { name: 'Alongamento Completo', sets: '1x', weight: '20 min' },
-        { name: 'Mobilidade Articular', sets: '1x', weight: '15 min' }
-      ] 
-    }
-  },
-  forca: { 
-    segunda: { name: 'Upper Strength', exercises: [{ name: 'Supino', sets: '5x5', weight: '80kg' }] }, 
-    terca: { name: 'Lower Strength', exercises: [{ name: 'Agachamento', sets: '5x5', weight: '100kg' }] }, 
-    quarta: { name: 'Rest', exercises: [] }, 
-    quinta: { name: 'Upper Hyper', exercises: [{ name: 'Militar', sets: '3x10', weight: '40kg' }] }, 
-    sexta: { name: 'Lower Hyper', exercises: [{ name: 'Leg Press', sets: '3x12', weight: '200kg' }] }, 
-    sabado: { name: 'Rest', exercises: [] }, 
-    domingo: { name: 'Rest', exercises: [] } 
-  },
-  definicao: { 
-    segunda: { name: 'Fullbody A', exercises: [{ name: 'Burpees', sets: '3x15', weight: 'BW' }] }, 
-    terca: { name: 'Cardio', exercises: [{ name: 'Esteira', sets: '45min', weight: 'Leve' }] }, 
-    quarta: { name: 'Fullbody B', exercises: [{ name: 'Flexões', sets: '4x20', weight: 'BW' }] }, 
-    quinta: { name: 'Cardio', exercises: [{ name: 'Bike', sets: '45min', weight: 'Mod' }] }, 
-    sexta: { name: 'Fullbody C', exercises: [{ name: 'Agachamento Salto', sets: '3x15', weight: 'BW' }] }, 
-    sabado: { name: 'HIIT', exercises: [{ name: 'Sprints', sets: '10x', weight: 'Max' }] }, 
-    domingo: { name: 'Rest', exercises: [] } 
-  }
-};
-
-const defaultRoutine: RoutineItem[] = [{ id: 1, timeStart: '07:00', timeEnd: '07:15', activity: 'Stomach Vacuum', category: 'training' }];
-const defaultCourses: Course[] = [ { id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco.", progress: 15, modules: [{ id: 1, title: "FASE 1: BLINDAGEM", lessons: [{ id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }] }] } ];
 
 export default function BatmanWorkoutDashboard() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('bat_token'));
@@ -175,200 +86,170 @@ export default function BatmanWorkoutDashboard() {
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
 
+  // ESTADO INICIAL NULL (Para evitar piscar dados errados)
   const [loading, setLoading] = useState(false);
-  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [userProfile, setUserProfile] = useState(() => { const s = localStorage.getItem('bat_profile_v2'); return s ? JSON.parse(s) : { name: '', weight: '', goal: 'hipertrofia' }; });
+  const [workoutData, setWorkoutData] = useState<WorkoutPlans | null>(null);
   
-  const [workoutData, setWorkoutData] = useState<WorkoutPlans>(defaultWorkoutPlans);
+  const [userProfile, setUserProfile] = useState(() => { const s = localStorage.getItem('bat_profile_v2'); return s ? JSON.parse(s) : { name: '', weight: '', goal: 'hipertrofia' }; });
   const [routine] = useState<RoutineItem[]>(() => { const s = localStorage.getItem('bat_routine'); return s ? JSON.parse(s) : defaultRoutine; });
   const [courses] = useState<Course[]>(() => { const s = localStorage.getItem('bat_courses'); return s ? JSON.parse(s) : defaultCourses; });
-  
-  const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
-  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
   const [selectedDay, setSelectedDay] = useState<WorkoutDay>('segunda');
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
+  const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
 
   const currentGoal: UserGoal = (userProfile.goal as UserGoal) || 'hipertrofia';
-  const safePlan = workoutData[currentGoal] ? workoutData[currentGoal] : defaultWorkoutPlans[currentGoal];
-  const currentWorkout = safePlan?.[selectedDay] || { name: 'Carregando...', exercises: [] };
   const imc = (parseFloat(userProfile.weight) && parseFloat(userProfile.height)) ? (parseFloat(userProfile.weight) / ((parseFloat(userProfile.height)/100)**2)).toFixed(1) : 'N/A';
 
-  // --- EFEITO DE CARREGAMENTO INTELIGENTE ---
+  // --- O CÉREBRO AUTÔNOMO ---
   useEffect(() => {
     if (!token) return;
 
-    const connectToArkham = async () => {
+    const initializeSystem = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_BASE}/workouts`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-                const dataList = await response.json();
-                console.log("🦇 DADOS RECEBIDOS:", dataList);
-
-                if (Array.isArray(dataList) && dataList.length > 0) {
-                    const newPlans = JSON.parse(JSON.stringify(defaultWorkoutPlans));
-                    
-                    dataList.forEach((w: any) => {
-                        // FORÇA MINÚSCULAS PARA ENCAIXAR PERFEITO
-                        const catKey = w.category.toLowerCase().trim() as UserGoal;
-                        const dayKey = w.day.toLowerCase().trim() as WorkoutDay;
-
-                        if (newPlans[catKey] && newPlans[catKey][dayKey]) {
-                            newPlans[catKey][dayKey] = {
-                                id: w.id, // O ID IMPORTANTE
-                                name: w.name,
-                                exercises: w.exercises // Trazendo exercícios COM IDs do banco
-                            };
-                        }
-                    });
-                    setWorkoutData(newPlans);
+            // 1. Tenta buscar os dados do banco
+            const res = await fetch(`${API_BASE}/workouts`, { headers: { 'Authorization': `Bearer ${token}` } });
+            
+            if (res.ok) {
+                const dataList = await res.json();
+                
+                // 2. Lógica de Decisão: Banco Vazio ou Incompleto?
+                if (!Array.isArray(dataList) || dataList.length < 5) {
+                    console.log("🦇 Banco incompleto detectado. Iniciando Auto-Gênese...");
+                    await performAutoGenesis();
+                } else {
+                    // 3. Banco Saudável: Processar e Exibir
+                    processAndSetData(dataList);
                 }
-            } 
-        } catch (error) { 
-            console.error("Erro ao conectar com Arkham:", error); 
-        } finally { 
-            setLoading(false); 
+            } else {
+                console.warn("Erro ao ler banco. Tentando Auto-Gênese...");
+                await performAutoGenesis();
+            }
+        } catch (error) {
+            console.error("Erro fatal de conexão:", error);
+        } finally {
+            setLoading(false);
         }
     };
-    connectToArkham();
+
+    const performAutoGenesis = async () => {
+        // Prepara os dados mestres para envio
+        const payload: any[] = [];
+        Object.keys(masterWorkoutPlans).forEach((goal: string) => {
+             const days = masterWorkoutPlans[goal as UserGoal];
+             Object.keys(days).forEach((day: string) => {
+                 const workout = days[day as WorkoutDay];
+                 payload.push({ category: goal, day: day, name: workout.name, exercises: workout.exercises });
+             });
+        });
+
+        // Envia para o servidor limpar e criar
+        try {
+            await fetch(`${API_BASE}/workouts/batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ plans: payload })
+            });
+            // Recarrega os dados frescos
+            const res = await fetch(`${API_BASE}/workouts`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const newData = await res.json();
+            processAndSetData(newData);
+        } catch (e) { console.error("Falha na Auto-Gênese", e); }
+    };
+
+    const processAndSetData = (dataList: any[]) => {
+        const newPlans = JSON.parse(JSON.stringify(masterWorkoutPlans));
+        let matchCount = 0;
+        dataList.forEach((w: any) => {
+            const catKey = w.category.toLowerCase().trim() as UserGoal;
+            const dayKey = w.day.toLowerCase().trim() as WorkoutDay;
+            if (newPlans[catKey] && newPlans[catKey][dayKey]) {
+                newPlans[catKey][dayKey] = {
+                    id: w.id, // ID REAL DO BANCO
+                    name: w.name,
+                    exercises: w.exercises // EXERCÍCIOS REAIS COM ID
+                };
+                matchCount++;
+            }
+        });
+        console.log(`🦇 Sistema Sincronizado: ${matchCount} módulos carregados.`);
+        setWorkoutData(newPlans);
+    };
+
+    initializeSystem();
   }, [token]);
 
-  // --- FUNÇÃO DE GÊNESE MANUAL (RESET) ---
-  const forceReset = async () => {
-      if(!confirm("⚠️ AVISO: Isso vai APAGAR e REINICIAR todos os treinos no servidor. Use apenas se o sistema estiver vazio.")) return;
-      
-      const payload: any[] = [];
-      Object.keys(defaultWorkoutPlans).forEach((goal: string) => {
-           const days = defaultWorkoutPlans[goal as UserGoal];
-           Object.keys(days).forEach((day: string) => {
-               const workout = days[day as WorkoutDay];
-               payload.push({
-                   category: goal,
-                   day: day,
-                   name: workout.name,
-                   exercises: workout.exercises
-               });
-           });
-      });
 
-      try {
-          setLoading(true);
-          const res = await fetch(`${API_BASE}/workouts/batch`, {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({ plans: payload })
-          });
-          
-          if (res.ok) {
-              alert("✅ SISTEMA RESTAURADO!");
-              window.location.reload();
-          } else {
-              alert("❌ Erro ao restaurar.");
-          }
-      } catch (err) {
-          console.error(err);
-          alert("❌ Erro de conexão.");
-      } finally {
-          setLoading(false);
-      }
-  };
-
+  // --- HANDLERS ---
   const handleAuth = async () => {
-      setAuthError('');
       const endpoint = isRegistering ? '/register' : '/login';
       try {
-          const res = await fetch(`${API_BASE}${endpoint}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(authForm)
-          });
+          const res = await fetch(`${API_BASE}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(authForm) });
           const data = await res.json();
           if (res.ok) {
-              if (isRegistering) {
-                  setIsRegistering(false); 
-                  setAuthError('Registro confirmado. Faça login.');
-              } else {
-                  localStorage.setItem('bat_token', data.token);
-                  setToken(data.token);
-                  setUserProfile((prev: any) => ({ ...prev, name: data.user.name }));
-              }
-          } else {
-              setAuthError(data.error || 'Falha na autenticação');
-          }
-      } catch (err) {
-          setAuthError('Erro de conexão com Arkham Server');
-      }
+              if (isRegistering) { setIsRegistering(false); setAuthError('Registro OK. Faça login.'); }
+              else { localStorage.setItem('bat_token', data.token); setToken(data.token); setUserProfile((p: any) => ({ ...p, name: data.user.name })); }
+          } else { setAuthError(data.error || 'Falha.'); }
+      } catch { setAuthError('Erro de conexão.'); }
   };
 
-  const handleLogout = () => { localStorage.removeItem('bat_token'); setToken(null); };
-
-  // --- SALVAMENTO COM DEBUG ---
-  const saveExerciseToDb = async (exercise: Exercise) => {
-      if (!exercise.id) {
-          console.warn("🚫 Tentativa de salvar sem ID:", exercise);
-          return;
-      }
-      if (!token) return;
-
-      setSavingStatus('saving');
+  const saveExercise = async (exercise: Exercise) => {
+      if (!exercise.id || !token) return;
       try {
-          console.log(`📡 Enviando update para ID ${exercise.id}...`);
-          const res = await fetch(`${API_BASE}/exercises/${exercise.id}`, {
+          await fetch(`${API_BASE}/exercises/${exercise.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify(exercise)
           });
-          
-          if (res.ok) {
-              setSavingStatus('saved');
-              setTimeout(() => setSavingStatus('idle'), 2000);
-          } else {
-              console.error("Erro no backend:", await res.text());
-              setSavingStatus('error');
-          }
-      } catch (error) { 
-          console.error("Erro de rede:", error);
-          setSavingStatus('error'); 
-      }
+      } catch (e) { console.error("Erro ao salvar", e); }
   };
 
-  const handleExerciseChange = (exIndex: number, field: keyof Exercise, value: string) => { 
+  const handleExerciseChange = (idx: number, field: keyof Exercise, val: string) => { 
+      if(!workoutData) return;
       const u = JSON.parse(JSON.stringify(workoutData)); 
-      u[currentGoal][selectedDay].exercises[exIndex][field] = value; 
+      u[currentGoal][selectedDay].exercises[idx][field] = val; 
       setWorkoutData(u); 
   };
-  const handleExerciseBlur = (exIndex: number) => { 
-      const exercise = workoutData[currentGoal][selectedDay].exercises[exIndex]; 
-      saveExerciseToDb(exercise); 
+  const handleExerciseBlur = (idx: number) => { 
+      if(!workoutData) return;
+      saveExercise(workoutData[currentGoal][selectedDay].exercises[idx]); 
   };
+  const addNewExercise = () => { if(!workoutData) return; const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.push({ name: 'Novo', sets: '3x10', weight: '0kg' }); setWorkoutData(u); };
+  const removeExercise = (idx: number) => { if(!workoutData) return; const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.splice(idx, 1); setWorkoutData(u); };
 
-  useEffect(() => { localStorage.setItem('bat_profile_v2', JSON.stringify(userProfile)); }, [userProfile]);
-  const addNewExercise = () => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.push({ name: 'Novo Exercício', sets: '3x10', weight: 'Carga' }); setWorkoutData(u); };
-  const removeExercise = (index: number) => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.splice(index, 1); setWorkoutData(u); };
 
-  if (!token) {
-      return (
-          <div className="min-h-screen bg-wayne-dark flex items-center justify-center p-6 font-hud">
-              <TechCard className="w-full max-w-md" title={isRegistering ? "Novo Operador" : "Acesso Restrito"} icon={Lock}>
-                  <div className="space-y-4">
-                      {isRegistering && ( <div> <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Codinome</label> <input type="text" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} /> </div> )}
-                      <div> <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Identificação (Email)</label> <input type="email" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} /> </div>
-                      <div> <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Senha de Acesso</label> <input type="password" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} /> </div>
-                      {authError && <div className="text-accent-red text-xs font-bold uppercase">{authError}</div>}
-                      <TacticalButton onClick={handleAuth} className="w-full">{isRegistering ? 'Confirmar Registro' : 'Decriptar Acesso'}</TacticalButton>
-                      <div className="text-center pt-4 border-t border-wayne-border"> <button onClick={() => { setIsRegistering(!isRegistering); setAuthError(''); }} className="text-xs text-text-muted hover:text-accent-blue uppercase font-bold tracking-widest"> {isRegistering ? 'Já possui acesso? Entrar' : 'Solicitar novo acesso'} </button> </div>
-                  </div>
-              </TechCard>
+  // --- RENDERIZAÇÃO ---
+  if (!token) return (
+      <div className="min-h-screen bg-wayne-dark flex items-center justify-center p-6 font-hud">
+          <TechCard className="w-full max-w-md" title={isRegistering ? "Novo Operador" : "Acesso Restrito"} icon={Lock}>
+              <div className="space-y-4">
+                  {isRegistering && (<div><label className="text-xs font-bold text-text-muted mb-2 block">CODINOME</label><input className="w-full bg-wayne-dark border border-wayne-border p-3 text-white" value={authForm.name} onChange={e=>setAuthForm({...authForm, name: e.target.value})}/></div>)}
+                  <div><label className="text-xs font-bold text-text-muted mb-2 block">IDENTIFICAÇÃO</label><input type="email" className="w-full bg-wayne-dark border border-wayne-border p-3 text-white" value={authForm.email} onChange={e=>setAuthForm({...authForm, email: e.target.value})}/></div>
+                  <div><label className="text-xs font-bold text-text-muted mb-2 block">SENHA</label><input type="password" className="w-full bg-wayne-dark border border-wayne-border p-3 text-white" value={authForm.password} onChange={e=>setAuthForm({...authForm, password: e.target.value})}/></div>
+                  {authError && <div className="text-accent-red text-xs">{authError}</div>}
+                  <TacticalButton onClick={handleAuth} className="w-full">{isRegistering ? 'REGISTRAR' : 'ACESSAR'}</TacticalButton>
+                  <div className="text-center pt-4 border-t border-wayne-border"><button onClick={()=>{setIsRegistering(!isRegistering);setAuthError('')}} className="text-xs text-text-muted hover:text-white">{isRegistering ? 'JÁ TEM CONTA? ENTRAR' : 'SOLICITAR ACESSO'}</button></div>
+              </div>
+          </TechCard>
+      </div>
+  );
+
+  // TELA DE CARREGAMENTO (Evita o Flicker)
+  if (loading || !workoutData) return (
+      <div className="min-h-screen bg-wayne-dark flex items-center justify-center font-hud">
+          <div className="text-center animate-pulse">
+              <Activity className="text-accent-blue mx-auto mb-4 w-12 h-12"/>
+              <h2 className="text-xl text-white font-bold tracking-[0.3em]">CONECTANDO AO SERVIDOR...</h2>
+              <p className="text-xs text-text-muted mt-2">SINCRONIZANDO DADOS TÁTICOS</p>
           </div>
-      );
-  }
+      </div>
+  );
+
+  const safePlan = workoutData[currentGoal] || masterWorkoutPlans[currentGoal];
+  const currentWorkout = safePlan[selectedDay];
 
   return (
     <div className="min-h-screen bg-wayne-dark text-text-main pb-24 font-hud selection:bg-accent-blue selection:text-black relative overflow-x-hidden">
@@ -377,14 +258,11 @@ export default function BatmanWorkoutDashboard() {
         <header className="mb-10 flex flex-col md:flex-row justify-between items-end gap-6 border-b border-wayne-border pb-6">
           <div>
             <div className={`inline-flex items-center gap-2 px-2 py-1 border text-[10px] uppercase font-bold mb-3 rounded-sm bg-accent-blue/10 border-accent-blue/30 text-accent-blue`}> <Shield size={10} /> ACESSO AUTORIZADO </div>
-            {savingStatus === 'saving' && <span className="ml-4 text-[10px] text-accent-blue animate-pulse font-mono">SALVANDO...</span>}
-            {savingStatus === 'error' && <span className="ml-4 text-[10px] text-accent-red font-bold font-mono">ERRO AO SALVAR</span>}
-            {loading && <span className="ml-4 text-[10px] text-accent-blue animate-pulse font-mono">CARREGANDO DADOS...</span>}
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight uppercase"> Bem-vindo, <span className="text-accent-blue">{userProfile.name || 'Operador'}</span> </h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight uppercase"> BEM-VINDO, <span className="text-accent-blue">{userProfile.name}</span> </h1>
           </div>
           <div className="flex gap-4">
-              <div className="bg-wayne-panel px-6 py-2 rounded-sm border border-wayne-border text-center"> <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Status Físico</div> <div className="text-xl font-bold text-white font-mono">IMC: {imc}</div> </div>
-              <button onClick={handleLogout} className="bg-wayne-panel border border-wayne-border text-text-muted hover:text-accent-red px-4 rounded-sm transition-colors" title="Encerrar Sessão"> <LogOut size={20} /> </button>
+              <div className="bg-wayne-panel px-6 py-2 rounded-sm border border-wayne-border text-center"> <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">IMC</div> <div className="text-xl font-bold text-white font-mono">{imc}</div> </div>
+              <button onClick={()=>{localStorage.removeItem('bat_token');setToken(null)}} className="bg-wayne-panel border border-wayne-border text-text-muted hover:text-accent-red px-4 rounded-sm" title="Sair"> <LogOut size={20} /> </button>
           </div>
         </header>
 
@@ -406,10 +284,7 @@ export default function BatmanWorkoutDashboard() {
                     
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-white uppercase">{currentWorkout?.name}</h2>
-                        <div className="flex gap-2">
-                            <button onClick={forceReset} className="bg-red-900/30 text-red-400 border border-red-900/50 hover:bg-red-900/50 hover:border-red-500 p-2 rounded-sm text-xs font-bold transition-all flex items-center gap-2"> <RefreshCw size={14} /> RESTAURAR DB </button>
-                            <button onClick={() => setIsEditingWorkout(!isEditingWorkout)} className="text-text-muted hover:text-accent-blue bg-wayne-panel p-2 rounded-sm border border-wayne-border"> <Edit3 size={18}/> </button>
-                        </div>
+                        <button onClick={() => setIsEditingWorkout(!isEditingWorkout)} className="text-text-muted hover:text-accent-blue bg-wayne-panel p-2 rounded-sm border border-wayne-border"> <Edit3 size={18}/> </button>
                     </div>
 
                     <div className="space-y-3">
