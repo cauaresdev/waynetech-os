@@ -218,8 +218,31 @@ export default function BatmanWorkoutDashboard() {
       saveExercise(workoutData[currentGoal][selectedDay].exercises[idx]); 
   };
   const addNewExercise = () => { if(!workoutData) return; const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.push({ name: 'Novo', sets: '3x10', weight: '0kg' }); setWorkoutData(u); };
-  const removeExercise = (idx: number) => { if(!workoutData) return; const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.splice(idx, 1); setWorkoutData(u); };
+  const removeExercise = async (idx: number) => { 
+      if(!workoutData) return; 
+      
+      // 1. Identifica o alvo antes de remover
+      const targetExercise = workoutData[currentGoal][selectedDay].exercises[idx];
 
+      // 2. Remove visualmente (para ser rápido)
+      const u = JSON.parse(JSON.stringify(workoutData)); 
+      u[currentGoal][selectedDay].exercises.splice(idx, 1); 
+      setWorkoutData(u); 
+
+      // 3. Manda a ordem de eliminação para o Banco
+      if (targetExercise.id && token) {
+          console.log(`🗑️ Eliminando exercício ID: ${targetExercise.id}`);
+          try {
+              await fetch(`${API_BASE}/exercises/${targetExercise.id}`, {
+                  method: 'DELETE',
+                  headers: { 'Authorization': `Bearer ${token}` }
+              });
+          } catch (error) {
+              console.error("Falha ao deletar no servidor", error);
+              alert("Erro ao sincronizar deleção. Dê F5.");
+          }
+      }
+  };
 
   // --- RENDERIZAÇÃO ---
   if (!token) return (
