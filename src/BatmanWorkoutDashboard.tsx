@@ -1,29 +1,33 @@
 import { useState, useEffect } from 'react';
 import { 
-    Dumbbell, Plus, 
-    CheckSquare, 
-    Edit3, Activity, Target, Lock, Check, ArrowLeft, Trash2, Shield, Play, LogOut
+  Dumbbell, Plus, Edit3, 
+  ArrowLeft, Trash2, Shield, Play, LogOut, RefreshCw, Lock 
 } from 'lucide-react';
 
+// IMPORTAÇÃO DAS ABAS (Certifique-se que os arquivos existem na pasta src)
 import MissionsTab from './MissionsTab';
 import ChecklistTab from './ChecklistTab';
 import JournalTab from './JournalTab';
-// Mantenha o import MissionsTab ...
 
-// --- TIPOS ---
+// ==========================================
+// ⚙️ CONFIGURAÇÃO DA API
+// ==========================================
+// 👇👇👇 TROQUE PELO SEU LINK DO RENDER AQUI 👇👇👇
+const API_BASE = 'https://arkham-backend.onrender.com'; 
+
+// --- TIPOS E INTERFACES ---
 type AppTab = 'dashboard' | 'routine' | 'protocols' | 'stats' | 'checklist' | 'missions' | 'journal' | 'library';
 interface Exercise { id?: number; name: string; sets: string; weight: string; }
 interface Workout { id?: number; name: string; exercises: Exercise[]; }
 type WorkoutDay = 'segunda' | 'terca' | 'quarta' | 'quinta' | 'sexta' | 'sabado' | 'domingo';
 type UserGoal = 'hipertrofia' | 'forca' | 'definicao';
 type WorkoutPlans = Record<UserGoal, Record<WorkoutDay, Workout>>;
-interface Mission { id: number; title: string; status: 'intel' | 'em_curso' | 'neutralizado'; priority: 'alta' | 'normal'; }
 interface RoutineItem { id: number; timeStart: string; timeEnd: string; activity: string; category: 'work' | 'training' | 'rest' | 'sustenance'; }
 interface Lesson { id: number; title: string; duration: string; completed: boolean; type: 'video' | 'text'; videoUrl?: string; }
 interface Module { id: number; title: string; lessons: Lesson[]; }
 interface Course { id: number; title: string; description: string; progress: number; modules: Module[]; }
 
-// --- COMPONENTES VISUAIS ---
+// --- COMPONENTES VISUAIS AUXILIARES ---
 const TechCard = ({ children, className = "", title, icon: Icon, active = false, subtitle }: any) => (
   <div className={`relative overflow-hidden rounded-sm border transition-all duration-300 ${active ? 'border-accent-blue bg-accent-blue/5' : `border-wayne-border bg-wayne-panel hover:border-accent-blue/30`} backdrop-blur-sm ${className}`}>
     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10"></div>
@@ -50,7 +54,6 @@ const TacticalButton = ({ children, onClick, variant = 'primary', className = ""
     </button>
 );
 
-// --- COMPONENTE PLAYER ---
 const MilitaryVideoPlayer = ({ lesson, onComplete }: { lesson: Lesson, onComplete: () => void }) => {
     const getEmbedUrl = (url: string) => {
         if (!url) return null;
@@ -77,11 +80,9 @@ const MilitaryVideoPlayer = ({ lesson, onComplete }: { lesson: Lesson, onComplet
     );
 };
 
-// --- DADOS PADRÃO ---
+// --- DADOS PADRÃO (FALLBACK) ---
 const defaultWorkoutPlans: WorkoutPlans = { hipertrofia: { segunda: { name: 'COSTAS, BÍCEPS & MANOPLA', exercises: [] }, terca: { name: 'INFERIOR A', exercises: [] }, quarta: { name: 'OMBROS', exercises: [] }, quinta: { name: 'INFERIOR B', exercises: [] }, sexta: { name: 'PEITO & TRÍCEPS', exercises: [] }, sabado: { name: 'ARKHAM: Armadura', exercises: [] }, domingo: { name: 'Descanso Tático', exercises: [] } }, forca: { segunda: { name: 'Upper', exercises: [] }, terca: { name: 'Lower', exercises: [] }, quarta: { name: 'Rest', exercises: [] }, quinta: { name: 'Upper', exercises: [] }, sexta: { name: 'Lower', exercises: [] }, sabado: { name: 'Rest', exercises: [] }, domingo: { name: 'Rest', exercises: [] } }, definicao: { segunda: { name: 'Fullbody', exercises: [] }, terca: { name: 'Cardio', exercises: [] }, quarta: { name: 'Fullbody', exercises: [] }, quinta: { name: 'Cardio', exercises: [] }, sexta: { name: 'Fullbody', exercises: [] }, sabado: { name: 'HIIT', exercises: [] }, domingo: { name: 'Rest', exercises: [] } } };
 const defaultRoutine: RoutineItem[] = [{ id: 1, timeStart: '07:00', timeEnd: '07:15', activity: 'Stomach Vacuum', category: 'training' }];
-const defaultHabits = [ { id: 1, text: 'Vacuum Matinal', completed: false } ];
-const defaultMissions: Mission[] = [ { id: 1, title: 'Vencer Ranking Gymrats', status: 'em_curso', priority: 'alta' } ];
 const defaultCourses: Course[] = [ { id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco.", progress: 15, modules: [{ id: 1, title: "FASE 1: BLINDAGEM", lessons: [{ id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }] }] } ];
 
 export default function BatmanWorkoutDashboard() {
@@ -98,38 +99,29 @@ export default function BatmanWorkoutDashboard() {
   
   const [workoutData, setWorkoutData] = useState<WorkoutPlans>(defaultWorkoutPlans);
   const [routine] = useState<RoutineItem[]>(() => { const s = localStorage.getItem('bat_routine'); return s ? JSON.parse(s) : defaultRoutine; });
-  const [missions] = useState<Mission[]>(() => { const s = localStorage.getItem('bat_missions'); return s ? JSON.parse(s) : defaultMissions; });
-  const [habits, setHabits] = useState(() => { const s = localStorage.getItem('bat_habits'); return s ? JSON.parse(s) : defaultHabits; });
   const [courses] = useState<Course[]>(() => { const s = localStorage.getItem('bat_courses'); return s ? JSON.parse(s) : defaultCourses; });
   
   // UI & Modals
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
-
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
   const [selectedDay, setSelectedDay] = useState<WorkoutDay>('segunda');
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
 
   // --- ZONA DE SEGURANÇA ---
   const currentGoal: UserGoal = (userProfile.goal as UserGoal) || 'hipertrofia';
-  
-  // 1. Define um plano seguro. Se o dado do servidor (workoutData) falhar, usa o padrão (defaultWorkoutPlans)
   const safePlan = workoutData[currentGoal] ? workoutData[currentGoal] : defaultWorkoutPlans[currentGoal];
-  
-  // 2. Define o treino seguro usando o plano seguro
   const currentWorkout = safePlan?.[selectedDay] || { name: 'Carregando...', exercises: [] };
-  
   const imc = (parseFloat(userProfile.weight) && parseFloat(userProfile.height)) ? (parseFloat(userProfile.weight) / ((parseFloat(userProfile.height)/100)**2)).toFixed(1) : 'N/A';
 
   // --- EFEITO DE CARREGAMENTO (SÓ RODA SE TIVER TOKEN) ---
-  // --- EFEITO DE CARREGAMENTO INTELIGENTE ---
   useEffect(() => {
     if (!token) return;
 
     const connectToArkham = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://arkham-backend.onrender.com/workouts', { // <--- CONFIRA SUA URL
+            const response = await fetch(`${API_BASE}/workouts`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -137,91 +129,83 @@ export default function BatmanWorkoutDashboard() {
             if (response.ok) {
                 const dataList = await response.json();
                 
-                // Se a lista vier vazia, força a criação dos padrões
+                // Se o servidor retornar lista vazia ou erro 404, usamos o padrão
                 if (Array.isArray(dataList) && dataList.length === 0) {
-                     throw new Error("EMPTY_DB");
+                     console.log("Banco vazio. Aguardando Reset Manual.");
+                     return;
                 }
 
                 // CONVERSOR: Transforma a Lista do Banco no Formato do Site
                 const newPlans = JSON.parse(JSON.stringify(defaultWorkoutPlans));
-                
                 dataList.forEach((w: any) => {
                     if (newPlans[w.category] && newPlans[w.category][w.day]) {
                         newPlans[w.category][w.day] = {
-                            id: w.id, // Salva o ID para poder editar depois
+                            id: w.id, 
                             name: w.name,
                             exercises: w.exercises
                         };
                     }
                 });
-
                 setWorkoutData(newPlans);
             } 
-            // CENÁRIO 2: O servidor deu 404 ou lista vazia (Banco Novo)
-            else {
-                throw new Error("EMPTY_DB");
-            }
-
-        } catch (error: any) { 
-            // 🧬 PROTOCOLO DE GÊNESE: O banco está vazio, vamos populá-lo!
-            if (error.message === "EMPTY_DB" || error.status === 404) {
-                console.log("Banco vazio detectado. Iniciando Gênese...");
-                await initializeDatabase();
-            } else {
-                console.error("Erro offline ou de conexão"); 
-            }
+        } catch (error) { 
+            console.error("Erro ao conectar com Arkham:", error); 
         } finally { 
             setLoading(false); 
         }
     };
-
-    // Função auxiliar para enviar os dados padrão para o banco
-    const initializeDatabase = async () => {
-        const payload: any[] = [];
-        
-        // Transforma o Objeto defaultWorkoutPlans em Lista para o Banco
-        Object.keys(defaultWorkoutPlans).forEach((goal: string) => {
-             const days = defaultWorkoutPlans[goal as UserGoal];
-             Object.keys(days).forEach((day: string) => {
-                 const workout = days[day as WorkoutDay];
-                 payload.push({
-                     category: goal,
-                     day: day,
-                     name: workout.name,
-                     exercises: workout.exercises
-                 });
-             });
-        });
-
-        // Envia para o Backend
-        try {
-            const res = await fetch('https://arkham-backend.onrender.com/workouts/batch', { // <--- CONFIRA SUA URL
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ plans: payload })
-            });
-            
-            if (res.ok) {
-                // Se deu certo, recarrega a página para puxar os dados novos
-                window.location.reload();
-            }
-        } catch (err) {
-            console.error("Falha na inicialização do banco", err);
-        }
-    };
-
     connectToArkham();
   }, [token]);
+
+  // --- 🧬 FUNÇÃO DE GÊNESE MANUAL (BOTÃO VERMELHO) ---
+  const forceReset = async () => {
+      if(!confirm("⚠️ AVISO TÁTICO: Isso vai APAGAR todos os dados de treino atuais e restaurar o padrão de fábrica no servidor. Continuar?")) return;
+      
+      const payload: any[] = [];
+      Object.keys(defaultWorkoutPlans).forEach((goal: string) => {
+           const days = defaultWorkoutPlans[goal as UserGoal];
+           Object.keys(days).forEach((day: string) => {
+               const workout = days[day as WorkoutDay];
+               payload.push({
+                   category: goal,
+                   day: day,
+                   name: workout.name,
+                   exercises: workout.exercises
+               });
+           });
+      });
+
+      try {
+          setLoading(true);
+          const res = await fetch(`${API_BASE}/workouts/batch`, {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ plans: payload })
+          });
+          
+          if (res.ok) {
+              alert("✅ SISTEMA RESTAURADO! Recarregando...");
+              window.location.reload();
+          } else {
+              alert("❌ Erro ao restaurar. Verifique o console.");
+          }
+      } catch (err) {
+          console.error(err);
+          alert("❌ Erro de conexão.");
+      } finally {
+          setLoading(false);
+      }
+  };
 
   // --- HANDLERS DE AUTH ---
   const handleAuth = async () => {
       setAuthError('');
       const endpoint = isRegistering ? '/register' : '/login';
       try {
-          const res = await fetch(`https://arkham-backend.onrender.com${endpoint}`, {
+          const res = await fetch(`${API_BASE}${endpoint}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(authForm)
@@ -230,7 +214,7 @@ export default function BatmanWorkoutDashboard() {
           
           if (res.ok) {
               if (isRegistering) {
-                  setIsRegistering(false); // Vai para tela de login
+                  setIsRegistering(false); 
                   setAuthError('Registro confirmado. Faça login.');
               } else {
                   localStorage.setItem('bat_token', data.token);
@@ -252,10 +236,13 @@ export default function BatmanWorkoutDashboard() {
 
   // --- SALVAMENTO ---
   const saveExerciseToDb = async (exercise: Exercise) => {
-      if (!exercise.id || !token) return;
+      if (!exercise.id || !token) {
+          console.warn("Tentativa de salvar exercício sem ID (Use o botão Restaurar DB)");
+          return;
+      }
       setSavingStatus('saving');
       try {
-          await fetch(`https://arkham-backend.onrender.com/exercises/${exercise.id}`, {
+          await fetch(`${API_BASE}/exercises/${exercise.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify(exercise)
@@ -264,22 +251,25 @@ export default function BatmanWorkoutDashboard() {
           setTimeout(() => setSavingStatus('idle'), 2000);
       } catch (error) { setSavingStatus('error'); }
   };
-  const handleExerciseChange = (exIndex: number, field: keyof Exercise, value: string) => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises[exIndex][field] = value; setWorkoutData(u); };
-  const handleExerciseBlur = (exIndex: number) => { const exercise = workoutData[currentGoal][selectedDay].exercises[exIndex]; saveExerciseToDb(exercise); };
+
+  const handleExerciseChange = (exIndex: number, field: keyof Exercise, value: string) => { 
+      const u = JSON.parse(JSON.stringify(workoutData)); 
+      u[currentGoal][selectedDay].exercises[exIndex][field] = value; 
+      setWorkoutData(u); 
+  };
+  const handleExerciseBlur = (exIndex: number) => { 
+      const exercise = workoutData[currentGoal][selectedDay].exercises[exIndex]; 
+      saveExerciseToDb(exercise); 
+  };
 
   // --- PERSISTÊNCIA LOCAL AUXILIAR ---
   useEffect(() => { localStorage.setItem('bat_profile_v2', JSON.stringify(userProfile)); }, [userProfile]);
-  useEffect(() => { localStorage.setItem('bat_missions', JSON.stringify(missions)); }, [missions]);
-  useEffect(() => { localStorage.setItem('bat_habits', JSON.stringify(habits)); }, [habits]);
 
-  // Outros handlers (simplificados para espaço, mantendo lógica)
+  // Outros handlers
   const addNewExercise = () => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.push({ name: 'Novo Exercício', sets: '3x10', weight: 'Carga' }); setWorkoutData(u); };
   const removeExercise = (index: number) => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.splice(index, 1); setWorkoutData(u); };
-  const toggleHabit = (id: number) => setHabits(habits.map((h:any) => h.id === id ? { ...h, completed: !h.completed } : h));
-  
-  // Handlers Modais e Tabs
-  
-  // SE NÃO TIVER TOKEN, MOSTRA TELA DE LOGIN
+
+  // --- TELA DE LOGIN ---
   if (!token) {
       return (
           <div className="min-h-screen bg-wayne-dark flex items-center justify-center p-6 font-hud">
@@ -318,13 +308,13 @@ export default function BatmanWorkoutDashboard() {
       );
   }
 
-  // APP PRINCIPAL (SÓ RENDERIZA SE TIVER TOKEN)
+  // --- APP PRINCIPAL ---
   return (
     <div className="min-h-screen bg-wayne-dark text-text-main pb-24 font-hud selection:bg-accent-blue selection:text-black relative overflow-x-hidden">
       <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
       <div className="relative z-10 max-w-7xl mx-auto p-6">
         
-        {/* HEADER COM LOGOUT */}
+        {/* HEADER */}
         <header className="mb-10 flex flex-col md:flex-row justify-between items-end gap-6 border-b border-wayne-border pb-6">
           <div>
             <div className={`inline-flex items-center gap-2 px-2 py-1 border text-[10px] uppercase font-bold mb-3 rounded-sm bg-accent-blue/10 border-accent-blue/30 text-accent-blue`}>
@@ -356,6 +346,8 @@ export default function BatmanWorkoutDashboard() {
           ))}
         </nav>
 
+        {/* --- CONTEÚDO DAS ABAS --- */}
+        
         {currentTab === 'dashboard' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500">
              <div className="lg:col-span-2">
@@ -365,10 +357,20 @@ export default function BatmanWorkoutDashboard() {
                             <button key={day} onClick={() => setSelectedDay(day)} className={`px-4 py-2 rounded-sm text-[10px] font-bold uppercase border transition-all tracking-wider ${selectedDay === day ? 'bg-accent-blue text-black border-accent-blue' : 'bg-wayne-dark text-text-muted border-wayne-border hover:border-accent-blue/50'}`}>{day.substring(0,3)}</button>
                         ))}
                     </div>
+                    
+                    {/* BARRA DE CONTROLE: NOME E BOTÃO DE RESET */}
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-white uppercase">{currentWorkout?.name}</h2>
-                        <button onClick={() => setIsEditingWorkout(!isEditingWorkout)} className="text-text-muted hover:text-accent-blue bg-wayne-panel p-2 rounded-sm border border-wayne-border"><Edit3 size={18}/></button>
+                        <div className="flex gap-2">
+                            <button onClick={forceReset} className="bg-red-900/30 text-red-400 border border-red-900/50 hover:bg-red-900/50 hover:border-red-500 p-2 rounded-sm text-xs font-bold transition-all flex items-center gap-2">
+                                <RefreshCw size={14} /> RESTAURAR DB
+                            </button>
+                            <button onClick={() => setIsEditingWorkout(!isEditingWorkout)} className="text-text-muted hover:text-accent-blue bg-wayne-panel p-2 rounded-sm border border-wayne-border">
+                                <Edit3 size={18}/>
+                            </button>
+                        </div>
                     </div>
+
                     <div className="space-y-3">
                         {currentWorkout?.exercises.map((ex: any, idx: number) => (
                             <div key={idx} className="bg-wayne-dark p-4 rounded-sm border border-wayne-border flex justify-between items-center group hover:border-accent-blue/30 transition-colors">
@@ -399,32 +401,13 @@ export default function BatmanWorkoutDashboard() {
                 </TechCard>
              </div>
              
-             {/* PAINEL LATERAL (STATUS + MISSÕES) */}
+             {/* PAINEL LATERAL (RESUMO RÁPIDO) */}
              <div className="space-y-8">
-                <TechCard title="Missões Ativas" icon={Target}>
-                    <div className="space-y-3">
-                        {missions.slice(0, 3).map((m: any) => (
-                            <div key={m.id} className="text-sm bg-wayne-dark border-l-2 border-l-accent-blue border-y border-r border-wayne-border p-3 text-text-main flex items-center gap-3">
-                                <Activity size={14} className="text-accent-blue"/> {m.title}
-                            </div>
-                        ))}
-                    </div>
-                </TechCard>
-                <TechCard title="Checklist" icon={CheckSquare}>
-                    <div className="space-y-2">
-                        {habits.slice(0,3).map((h: any) => (
-                            <div key={h.id} onClick={() => toggleHabit(h.id)} className={`p-3 rounded-sm border flex items-center gap-3 cursor-pointer ${h.completed ? 'bg-accent-blue/10 border-accent-blue/30' : 'bg-wayne-dark border-wayne-border'}`}>
-                                <div className={`w-4 h-4 rounded-sm border flex items-center justify-center ${h.completed ? 'bg-accent-blue border-accent-blue text-black' : 'border-wayne-border'}`}>{h.completed && <Check size={10} strokeWidth={3} />}</div>
-                                <span className={`text-xs font-bold uppercase ${h.completed ? 'text-accent-blue line-through' : 'text-white'}`}>{h.text}</span>
-                            </div>
-                        ))}
-                    </div>
-                </TechCard>
+                 <ChecklistTab token={token} />
              </div>
           </div>
         )}
 
-        {/* --- DEMAIS ABAS (SIMPLIFICADAS PARA ESPAÇO, MAS FUNCIONAIS) --- */}
         {currentTab === 'routine' && <div className="animate-in fade-in"><TechCard title="Agenda"><div className="space-y-4">{routine.map(i => <div key={i.id} className="p-4 bg-wayne-panel border border-wayne-border"><span className="text-accent-blue font-bold text-xs">{i.timeStart}</span><h3 className="text-white font-bold">{i.activity}</h3></div>)}</div></TechCard></div>}
         
         {currentTab === 'protocols' && (
@@ -443,41 +426,18 @@ export default function BatmanWorkoutDashboard() {
             </div>
         )}
 
-        {/* 👇👇👇 ADIÇÃO DA ABA DE MISSÕES AQUI 👇👇👇 */}
-        {currentTab === 'missions' && (
-            <div className="animate-in fade-in duration-500">
-                {/* Passamos o token para o componente poder salvar no banco de dados */}
-                <MissionsTab token={token || ''} />
-            </div>
-        )}
+        {/* ABAS CONECTADAS */}
+        {currentTab === 'missions' && <div className="animate-in fade-in"><MissionsTab token={token} /></div>}
+        {currentTab === 'checklist' && <div className="animate-in fade-in"><ChecklistTab token={token} /></div>}
+        {currentTab === 'journal' && <div className="animate-in fade-in"><JournalTab token={token} /></div>}
 
-        {/* Placeholders para as futuras abas (Journal, Stats, etc) para não ficarem em branco */}
-       {currentTab === 'checklist' && (
-            <div className="animate-in fade-in duration-500">
-                 <ChecklistTab token={token || ''} />
-            </div>
-        )}
-
-        {currentTab === 'journal' && (
-            <div className="animate-in fade-in duration-500">
-                 <JournalTab token={token || ''} />
-            </div>
-        )}
-        
-        {currentTab === 'library' && (
-            <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted bg-wayne-panel border border-wayne-border rounded-sm">
-                <div className="text-center p-8">
-                    <div className="text-4xl mb-4">📚</div>
-                    <h3 className="text-xl text-white font-bold mb-2">BAT-COMPUTER DATABASE</h3>
-                    <p className="text-sm">Acesse a aba <strong>PROTOCOLOS</strong> para ver os cursos de combate mental.</p>
-                    <p className="text-xs mt-4 text-gray-500">Módulo de enciclopédia de exercícios em construção.</p>
+        {(currentTab === 'library' || currentTab === 'stats') && (
+            <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted">
+                <div className="text-center">
+                    <Lock size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p>
                 </div>
             </div>
-        )}
-
-        {/* Mantenha o placeholder só para Stats se quiser */}
-        {currentTab === 'stats' && (
-             <div className="flex items-center justify-center h-64 text-text-muted"><p>ESTATÍSTICAS EM BREVE</p></div>
         )}
 
       </div>
