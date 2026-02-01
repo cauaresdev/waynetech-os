@@ -115,41 +115,52 @@ export default function BatmanWorkoutDashboard() {
   const imc = (parseFloat(userProfile.weight) && parseFloat(userProfile.height)) ? (parseFloat(userProfile.weight) / ((parseFloat(userProfile.height)/100)**2)).toFixed(1) : 'N/A';
 
   // --- EFEITO DE CARREGAMENTO (SÓ RODA SE TIVER TOKEN) ---
+  // --- EFEITO DE CARREGAMENTO BLINDADO ---
   useEffect(() => {
     if (!token) return;
 
     const connectToArkham = async () => {
         setLoading(true);
         try {
+            // 👇 Substitua pela sua URL se necessário, mas deve puxar da const lá de cima
             const response = await fetch(`${API_BASE}/workouts`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            // CENÁRIO 1: O servidor retornou dados (Lista)
             if (response.ok) {
                 const dataList = await response.json();
-                
-                // Se o servidor retornar lista vazia ou erro 404, usamos o padrão
-                if (Array.isArray(dataList) && dataList.length === 0) {
-                     console.log("Banco vazio. Aguardando Reset Manual.");
-                     return;
-                }
+                console.log("🦇 DADOS RECEBIDOS DO BANCO:", dataList); // Olhe o console (F12)
 
-                // CONVERSOR: Transforma a Lista do Banco no Formato do Site
-                const newPlans = JSON.parse(JSON.stringify(defaultWorkoutPlans));
-                dataList.forEach((w: any) => {
-                    if (newPlans[w.category] && newPlans[w.category][w.day]) {
-                        newPlans[w.category][w.day] = {
-                            id: w.id, 
-                            name: w.name,
-                            exercises: w.exercises
-                        };
-                    }
-                });
-                setWorkoutData(newPlans);
+                if (Array.isArray(dataList) && dataList.length > 0) {
+                    // Cópia profunda do padrão
+                    const newPlans = JSON.parse(JSON.stringify(defaultWorkoutPlans));
+                    
+                    let matchCount = 0;
+
+                    dataList.forEach((w: any) => {
+                        // TRATAMENTO DE ERRO: Força tudo para minúsculo para garantir o encaixe
+                        const catKey = w.category.toLowerCase().trim() as UserGoal;
+                        const dayKey = w.day.toLowerCase().trim() as WorkoutDay;
+
+                        // Verifica se existe essa categoria e dia no plano
+                        if (newPlans[catKey] && newPlans[catKey][dayKey]) {
+                            newPlans[catKey][dayKey] = {
+                                id: w.id,            // ✅ O ID IMPORTANTE
+                                name: w.name,
+                                exercises: w.exercises // O Prisma já traz os exercícios com IDs
+                            };
+                            matchCount++;
+                        }
+                    });
+
+                    console.log(`🦇 Sincronização: ${matchCount} treinos encaixados com sucesso.`);
+                    setWorkoutData(newPlans);
+                } else {
+                    console.warn("🦇 Banco vazio ou retorno inválido. Use o botão RESTAURAR DB.");
+                }
             } 
         } catch (error) { 
-            console.error("Erro ao conectar com Arkham:", error); 
+            console.error("Erro fatal ao conectar:", error); 
         } finally { 
             setLoading(false); 
         }
