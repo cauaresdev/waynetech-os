@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { 
-  Dumbbell, Plus, Edit3, 
-  ArrowLeft, Trash2, Shield, Play, LogOut, RefreshCw, Lock 
+  Dumbbell, Plus, Edit3, Lock, Play, LogOut, RefreshCw, 
+  Shield, Trash2, ArrowLeft 
 } from 'lucide-react';
 
-// IMPORTAÇÃO DAS ABAS (Certifique-se que os arquivos existem na pasta src)
+// IMPORTAÇÃO DAS ABAS
 import MissionsTab from './MissionsTab';
 import ChecklistTab from './ChecklistTab';
 import JournalTab from './JournalTab';
@@ -12,7 +12,7 @@ import JournalTab from './JournalTab';
 // ==========================================
 // ⚙️ CONFIGURAÇÃO DA API
 // ==========================================
-// 👇👇👇 TROQUE PELO SEU LINK DO RENDER AQUI 👇👇👇
+// 👇👇👇 CONFIRA SEU LINK AQUI 👇👇👇
 const API_BASE = 'https://arkham-backend.onrender.com'; 
 
 // --- TIPOS E INTERFACES ---
@@ -27,7 +27,7 @@ interface Lesson { id: number; title: string; duration: string; completed: boole
 interface Module { id: number; title: string; lessons: Lesson[]; }
 interface Course { id: number; title: string; description: string; progress: number; modules: Module[]; }
 
-// --- COMPONENTES VISUAIS AUXILIARES ---
+// --- COMPONENTES VISUAIS ---
 const TechCard = ({ children, className = "", title, icon: Icon, active = false, subtitle }: any) => (
   <div className={`relative overflow-hidden rounded-sm border transition-all duration-300 ${active ? 'border-accent-blue bg-accent-blue/5' : `border-wayne-border bg-wayne-panel hover:border-accent-blue/30`} backdrop-blur-sm ${className}`}>
     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10"></div>
@@ -80,8 +80,7 @@ const MilitaryVideoPlayer = ({ lesson, onComplete }: { lesson: Lesson, onComplet
     );
 };
 
-// --- DADOS PADRÃO (FALLBACK) ---
-// --- DADOS PADRÃO (CARREGADOS) ---
+// --- DADOS PADRÃO CORRIGIDOS (SEG = COSTAS) ---
 const defaultWorkoutPlans: WorkoutPlans = {
   hipertrofia: {
     segunda: { 
@@ -147,7 +146,6 @@ const defaultWorkoutPlans: WorkoutPlans = {
       ] 
     }
   },
-  // Mantive os outros simplificados para economizar espaço, mas agora eles existem
   forca: { 
     segunda: { name: 'Upper Strength', exercises: [{ name: 'Supino', sets: '5x5', weight: '80kg' }] }, 
     terca: { name: 'Lower Strength', exercises: [{ name: 'Agachamento', sets: '5x5', weight: '100kg' }] }, 
@@ -167,17 +165,16 @@ const defaultWorkoutPlans: WorkoutPlans = {
     domingo: { name: 'Rest', exercises: [] } 
   }
 };
+
 const defaultRoutine: RoutineItem[] = [{ id: 1, timeStart: '07:00', timeEnd: '07:15', activity: 'Stomach Vacuum', category: 'training' }];
 const defaultCourses: Course[] = [ { id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco.", progress: 15, modules: [{ id: 1, title: "FASE 1: BLINDAGEM", lessons: [{ id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }] }] } ];
 
 export default function BatmanWorkoutDashboard() {
-  // --- AUTH STATES ---
   const [token, setToken] = useState<string | null>(localStorage.getItem('bat_token'));
   const [isRegistering, setIsRegistering] = useState(false);
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
 
-  // --- APP STATES ---
   const [loading, setLoading] = useState(false);
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [userProfile, setUserProfile] = useState(() => { const s = localStorage.getItem('bat_profile_v2'); return s ? JSON.parse(s) : { name: '', weight: '', goal: 'hipertrofia' }; });
@@ -186,66 +183,53 @@ export default function BatmanWorkoutDashboard() {
   const [routine] = useState<RoutineItem[]>(() => { const s = localStorage.getItem('bat_routine'); return s ? JSON.parse(s) : defaultRoutine; });
   const [courses] = useState<Course[]>(() => { const s = localStorage.getItem('bat_courses'); return s ? JSON.parse(s) : defaultCourses; });
   
-  // UI & Modals
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
   const [selectedDay, setSelectedDay] = useState<WorkoutDay>('segunda');
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
 
-  // --- ZONA DE SEGURANÇA ---
   const currentGoal: UserGoal = (userProfile.goal as UserGoal) || 'hipertrofia';
   const safePlan = workoutData[currentGoal] ? workoutData[currentGoal] : defaultWorkoutPlans[currentGoal];
   const currentWorkout = safePlan?.[selectedDay] || { name: 'Carregando...', exercises: [] };
   const imc = (parseFloat(userProfile.weight) && parseFloat(userProfile.height)) ? (parseFloat(userProfile.weight) / ((parseFloat(userProfile.height)/100)**2)).toFixed(1) : 'N/A';
 
-  // --- EFEITO DE CARREGAMENTO (SÓ RODA SE TIVER TOKEN) ---
-  // --- EFEITO DE CARREGAMENTO BLINDADO ---
+  // --- EFEITO DE CARREGAMENTO INTELIGENTE ---
   useEffect(() => {
     if (!token) return;
 
     const connectToArkham = async () => {
         setLoading(true);
         try {
-            // 👇 Substitua pela sua URL se necessário, mas deve puxar da const lá de cima
             const response = await fetch(`${API_BASE}/workouts`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (response.ok) {
                 const dataList = await response.json();
-                console.log("🦇 DADOS RECEBIDOS DO BANCO:", dataList); // Olhe o console (F12)
+                console.log("🦇 DADOS RECEBIDOS:", dataList);
 
                 if (Array.isArray(dataList) && dataList.length > 0) {
-                    // Cópia profunda do padrão
                     const newPlans = JSON.parse(JSON.stringify(defaultWorkoutPlans));
                     
-                    let matchCount = 0;
-
                     dataList.forEach((w: any) => {
-                        // TRATAMENTO DE ERRO: Força tudo para minúsculo para garantir o encaixe
+                        // FORÇA MINÚSCULAS PARA ENCAIXAR PERFEITO
                         const catKey = w.category.toLowerCase().trim() as UserGoal;
                         const dayKey = w.day.toLowerCase().trim() as WorkoutDay;
 
-                        // Verifica se existe essa categoria e dia no plano
                         if (newPlans[catKey] && newPlans[catKey][dayKey]) {
                             newPlans[catKey][dayKey] = {
-                                id: w.id,            // ✅ O ID IMPORTANTE
+                                id: w.id, // O ID IMPORTANTE
                                 name: w.name,
-                                exercises: w.exercises // O Prisma já traz os exercícios com IDs
+                                exercises: w.exercises // Trazendo exercícios COM IDs do banco
                             };
-                            matchCount++;
                         }
                     });
-
-                    console.log(`🦇 Sincronização: ${matchCount} treinos encaixados com sucesso.`);
                     setWorkoutData(newPlans);
-                } else {
-                    console.warn("🦇 Banco vazio ou retorno inválido. Use o botão RESTAURAR DB.");
                 }
             } 
         } catch (error) { 
-            console.error("Erro fatal ao conectar:", error); 
+            console.error("Erro ao conectar com Arkham:", error); 
         } finally { 
             setLoading(false); 
         }
@@ -253,9 +237,9 @@ export default function BatmanWorkoutDashboard() {
     connectToArkham();
   }, [token]);
 
-  // --- 🧬 FUNÇÃO DE GÊNESE MANUAL (BOTÃO VERMELHO) ---
+  // --- FUNÇÃO DE GÊNESE MANUAL (RESET) ---
   const forceReset = async () => {
-      if(!confirm("⚠️ AVISO TÁTICO: Isso vai APAGAR todos os dados de treino atuais e restaurar o padrão de fábrica no servidor. Continuar?")) return;
+      if(!confirm("⚠️ AVISO: Isso vai APAGAR e REINICIAR todos os treinos no servidor. Use apenas se o sistema estiver vazio.")) return;
       
       const payload: any[] = [];
       Object.keys(defaultWorkoutPlans).forEach((goal: string) => {
@@ -283,10 +267,10 @@ export default function BatmanWorkoutDashboard() {
           });
           
           if (res.ok) {
-              alert("✅ SISTEMA RESTAURADO! Recarregando...");
+              alert("✅ SISTEMA RESTAURADO!");
               window.location.reload();
           } else {
-              alert("❌ Erro ao restaurar. Verifique o console.");
+              alert("❌ Erro ao restaurar.");
           }
       } catch (err) {
           console.error(err);
@@ -296,7 +280,6 @@ export default function BatmanWorkoutDashboard() {
       }
   };
 
-  // --- HANDLERS DE AUTH ---
   const handleAuth = async () => {
       setAuthError('');
       const endpoint = isRegistering ? '/register' : '/login';
@@ -307,7 +290,6 @@ export default function BatmanWorkoutDashboard() {
               body: JSON.stringify(authForm)
           });
           const data = await res.json();
-          
           if (res.ok) {
               if (isRegistering) {
                   setIsRegistering(false); 
@@ -325,27 +307,36 @@ export default function BatmanWorkoutDashboard() {
       }
   };
 
-  const handleLogout = () => {
-      localStorage.removeItem('bat_token');
-      setToken(null);
-  };
+  const handleLogout = () => { localStorage.removeItem('bat_token'); setToken(null); };
 
-  // --- SALVAMENTO ---
+  // --- SALVAMENTO COM DEBUG ---
   const saveExerciseToDb = async (exercise: Exercise) => {
-      if (!exercise.id || !token) {
-          console.warn("Tentativa de salvar exercício sem ID (Use o botão Restaurar DB)");
+      if (!exercise.id) {
+          console.warn("🚫 Tentativa de salvar sem ID:", exercise);
           return;
       }
+      if (!token) return;
+
       setSavingStatus('saving');
       try {
-          await fetch(`${API_BASE}/exercises/${exercise.id}`, {
+          console.log(`📡 Enviando update para ID ${exercise.id}...`);
+          const res = await fetch(`${API_BASE}/exercises/${exercise.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify(exercise)
           });
-          setSavingStatus('saved');
-          setTimeout(() => setSavingStatus('idle'), 2000);
-      } catch (error) { setSavingStatus('error'); }
+          
+          if (res.ok) {
+              setSavingStatus('saved');
+              setTimeout(() => setSavingStatus('idle'), 2000);
+          } else {
+              console.error("Erro no backend:", await res.text());
+              setSavingStatus('error');
+          }
+      } catch (error) { 
+          console.error("Erro de rede:", error);
+          setSavingStatus('error'); 
+      }
   };
 
   const handleExerciseChange = (exIndex: number, field: keyof Exercise, value: string) => { 
@@ -358,92 +349,51 @@ export default function BatmanWorkoutDashboard() {
       saveExerciseToDb(exercise); 
   };
 
-  // --- PERSISTÊNCIA LOCAL AUXILIAR ---
   useEffect(() => { localStorage.setItem('bat_profile_v2', JSON.stringify(userProfile)); }, [userProfile]);
-
-  // Outros handlers
   const addNewExercise = () => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.push({ name: 'Novo Exercício', sets: '3x10', weight: 'Carga' }); setWorkoutData(u); };
   const removeExercise = (index: number) => { const u = JSON.parse(JSON.stringify(workoutData)); u[currentGoal][selectedDay].exercises.splice(index, 1); setWorkoutData(u); };
 
-  // --- TELA DE LOGIN ---
   if (!token) {
       return (
           <div className="min-h-screen bg-wayne-dark flex items-center justify-center p-6 font-hud">
               <TechCard className="w-full max-w-md" title={isRegistering ? "Novo Operador" : "Acesso Restrito"} icon={Lock}>
                   <div className="space-y-4">
-                      {isRegistering && (
-                          <div>
-                              <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Codinome</label>
-                              <input type="text" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" 
-                                  value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} />
-                          </div>
-                      )}
-                      <div>
-                          <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Identificação (Email)</label>
-                          <input type="email" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" 
-                              value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} />
-                      </div>
-                      <div>
-                          <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Senha de Acesso</label>
-                          <input type="password" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" 
-                              value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} />
-                      </div>
-                      
+                      {isRegistering && ( <div> <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Codinome</label> <input type="text" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} /> </div> )}
+                      <div> <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Identificação (Email)</label> <input type="email" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} /> </div>
+                      <div> <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">Senha de Acesso</label> <input type="password" className="w-full bg-wayne-dark border border-wayne-border rounded-sm p-3 text-white outline-none focus:border-accent-blue" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} /> </div>
                       {authError && <div className="text-accent-red text-xs font-bold uppercase">{authError}</div>}
-
                       <TacticalButton onClick={handleAuth} className="w-full">{isRegistering ? 'Confirmar Registro' : 'Decriptar Acesso'}</TacticalButton>
-                      
-                      <div className="text-center pt-4 border-t border-wayne-border">
-                          <button onClick={() => { setIsRegistering(!isRegistering); setAuthError(''); }} className="text-xs text-text-muted hover:text-accent-blue uppercase font-bold tracking-widest">
-                              {isRegistering ? 'Já possui acesso? Entrar' : 'Solicitar novo acesso'}
-                          </button>
-                      </div>
+                      <div className="text-center pt-4 border-t border-wayne-border"> <button onClick={() => { setIsRegistering(!isRegistering); setAuthError(''); }} className="text-xs text-text-muted hover:text-accent-blue uppercase font-bold tracking-widest"> {isRegistering ? 'Já possui acesso? Entrar' : 'Solicitar novo acesso'} </button> </div>
                   </div>
               </TechCard>
           </div>
       );
   }
 
-  // --- APP PRINCIPAL ---
   return (
     <div className="min-h-screen bg-wayne-dark text-text-main pb-24 font-hud selection:bg-accent-blue selection:text-black relative overflow-x-hidden">
       <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
       <div className="relative z-10 max-w-7xl mx-auto p-6">
-        
-        {/* HEADER */}
         <header className="mb-10 flex flex-col md:flex-row justify-between items-end gap-6 border-b border-wayne-border pb-6">
           <div>
-            <div className={`inline-flex items-center gap-2 px-2 py-1 border text-[10px] uppercase font-bold mb-3 rounded-sm bg-accent-blue/10 border-accent-blue/30 text-accent-blue`}>
-                <Shield size={10} /> ACESSO AUTORIZADO
-            </div>
+            <div className={`inline-flex items-center gap-2 px-2 py-1 border text-[10px] uppercase font-bold mb-3 rounded-sm bg-accent-blue/10 border-accent-blue/30 text-accent-blue`}> <Shield size={10} /> ACESSO AUTORIZADO </div>
             {savingStatus === 'saving' && <span className="ml-4 text-[10px] text-accent-blue animate-pulse font-mono">SALVANDO...</span>}
+            {savingStatus === 'error' && <span className="ml-4 text-[10px] text-accent-red font-bold font-mono">ERRO AO SALVAR</span>}
             {loading && <span className="ml-4 text-[10px] text-accent-blue animate-pulse font-mono">CARREGANDO DADOS...</span>}
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight uppercase">
-                Bem-vindo, <span className="text-accent-blue">{userProfile.name || 'Operador'}</span>
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight uppercase"> Bem-vindo, <span className="text-accent-blue">{userProfile.name || 'Operador'}</span> </h1>
           </div>
           <div className="flex gap-4">
-              <div className="bg-wayne-panel px-6 py-2 rounded-sm border border-wayne-border text-center">
-                 <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Status Físico</div>
-                 <div className="text-xl font-bold text-white font-mono">IMC: {imc}</div>
-              </div>
-              <button onClick={handleLogout} className="bg-wayne-panel border border-wayne-border text-text-muted hover:text-accent-red px-4 rounded-sm transition-colors" title="Encerrar Sessão">
-                  <LogOut size={20} />
-              </button>
+              <div className="bg-wayne-panel px-6 py-2 rounded-sm border border-wayne-border text-center"> <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Status Físico</div> <div className="text-xl font-bold text-white font-mono">IMC: {imc}</div> </div>
+              <button onClick={handleLogout} className="bg-wayne-panel border border-wayne-border text-text-muted hover:text-accent-red px-4 rounded-sm transition-colors" title="Encerrar Sessão"> <LogOut size={20} /> </button>
           </div>
         </header>
 
-        {/* NAVEGAÇÃO */}
         <nav className="flex gap-1 mb-8 overflow-x-auto pb-2 border-b border-wayne-border scrollbar-hide">
           {['dashboard', 'routine', 'protocols', 'stats', 'checklist', 'missions', 'library', 'journal'].map((tab: any) => (
-            <button key={tab} onClick={() => setCurrentTab(tab)} className={`px-6 py-3 text-xs font-bold uppercase transition-all border-b-2 tracking-widest whitespace-nowrap ${currentTab === tab ? 'border-accent-blue text-accent-blue bg-accent-blue/5' : 'border-transparent text-text-muted hover:text-white'}`}>
-                {tab === 'protocols' ? 'PROTOCOLOS' : tab === 'routine' ? 'AGENDA' : tab}
-            </button>
+            <button key={tab} onClick={() => setCurrentTab(tab)} className={`px-6 py-3 text-xs font-bold uppercase transition-all border-b-2 tracking-widest whitespace-nowrap ${currentTab === tab ? 'border-accent-blue text-accent-blue bg-accent-blue/5' : 'border-transparent text-text-muted hover:text-white'}`}> {tab === 'protocols' ? 'PROTOCOLOS' : tab === 'routine' ? 'AGENDA' : tab} </button>
           ))}
         </nav>
 
-        {/* --- CONTEÚDO DAS ABAS --- */}
-        
         {currentTab === 'dashboard' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500">
              <div className="lg:col-span-2">
@@ -454,16 +404,11 @@ export default function BatmanWorkoutDashboard() {
                         ))}
                     </div>
                     
-                    {/* BARRA DE CONTROLE: NOME E BOTÃO DE RESET */}
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-white uppercase">{currentWorkout?.name}</h2>
                         <div className="flex gap-2">
-                            <button onClick={forceReset} className="bg-red-900/30 text-red-400 border border-red-900/50 hover:bg-red-900/50 hover:border-red-500 p-2 rounded-sm text-xs font-bold transition-all flex items-center gap-2">
-                                <RefreshCw size={14} /> RESTAURAR DB
-                            </button>
-                            <button onClick={() => setIsEditingWorkout(!isEditingWorkout)} className="text-text-muted hover:text-accent-blue bg-wayne-panel p-2 rounded-sm border border-wayne-border">
-                                <Edit3 size={18}/>
-                            </button>
+                            <button onClick={forceReset} className="bg-red-900/30 text-red-400 border border-red-900/50 hover:bg-red-900/50 hover:border-red-500 p-2 rounded-sm text-xs font-bold transition-all flex items-center gap-2"> <RefreshCw size={14} /> RESTAURAR DB </button>
+                            <button onClick={() => setIsEditingWorkout(!isEditingWorkout)} className="text-text-muted hover:text-accent-blue bg-wayne-panel p-2 rounded-sm border border-wayne-border"> <Edit3 size={18}/> </button>
                         </div>
                     </div>
 
@@ -487,9 +432,7 @@ export default function BatmanWorkoutDashboard() {
                                         )}
                                     </div>
                                 </div>
-                                {isEditingWorkout ? 
-                                    <button onClick={() => removeExercise(idx)} className="text-accent-red hover:text-white"><Trash2 size={16}/></button> 
-                                : <div className="w-2 h-2 bg-wayne-border group-hover:bg-accent-blue rounded-full transition-colors"></div>}
+                                {isEditingWorkout ? <button onClick={() => removeExercise(idx)} className="text-accent-red hover:text-white"><Trash2 size={16}/></button> : <div className="w-2 h-2 bg-wayne-border group-hover:bg-accent-blue rounded-full transition-colors"></div>}
                             </div>
                         ))}
                     </div>
@@ -497,45 +440,16 @@ export default function BatmanWorkoutDashboard() {
                 </TechCard>
              </div>
              
-             {/* PAINEL LATERAL (RESUMO RÁPIDO) */}
-             <div className="space-y-8">
-                 <ChecklistTab token={token} />
-             </div>
+             <div className="space-y-8"> <ChecklistTab token={token} /> </div>
           </div>
         )}
 
         {currentTab === 'routine' && <div className="animate-in fade-in"><TechCard title="Agenda"><div className="space-y-4">{routine.map(i => <div key={i.id} className="p-4 bg-wayne-panel border border-wayne-border"><span className="text-accent-blue font-bold text-xs">{i.timeStart}</span><h3 className="text-white font-bold">{i.activity}</h3></div>)}</div></TechCard></div>}
-        
-        {currentTab === 'protocols' && (
-            <div className="animate-in fade-in">
-                 {activeCourseId === null ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{courses.map(c => <TechCard key={c.id} title={c.title} icon={Lock} className="cursor-pointer" ><div onClick={() => { setActiveCourseId(c.id); setActiveLesson(c.modules[0].lessons[0]); }}><p className="text-sm text-text-muted mb-4">{c.description}</p><TacticalButton className="text-[10px] w-full">Acessar</TacticalButton></div></TechCard>)}</div>
-                 ) : (
-                    <div>
-                        <button onClick={() => setActiveCourseId(null)} className="mb-4 text-xs font-bold text-text-muted flex items-center gap-2"><ArrowLeft size={14}/> Voltar</button>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="lg:col-span-2">{activeLesson && <MilitaryVideoPlayer lesson={activeLesson} onComplete={() => {}} />}</div>
-                            <div className="lg:col-span-1"><TechCard title="Aulas"><div className="space-y-2">{courses.find(c=>c.id===activeCourseId)?.modules[0].lessons.map(l => <div key={l.id} onClick={()=>setActiveLesson(l)} className={`p-3 border cursor-pointer ${activeLesson?.id === l.id ? 'border-accent-blue' : 'border-wayne-border'}`}>{l.title}</div>)}</div></TechCard></div>
-                        </div>
-                    </div>
-                 )}
-            </div>
-        )}
-
-        {/* ABAS CONECTADAS */}
+        {currentTab === 'protocols' && ( <div className="animate-in fade-in"> {activeCourseId === null ? ( <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{courses.map(c => <TechCard key={c.id} title={c.title} icon={Lock} className="cursor-pointer" ><div onClick={() => { setActiveCourseId(c.id); setActiveLesson(c.modules[0].lessons[0]); }}><p className="text-sm text-text-muted mb-4">{c.description}</p><TacticalButton className="text-[10px] w-full">Acessar</TacticalButton></div></TechCard>)}</div> ) : ( <div> <button onClick={() => setActiveCourseId(null)} className="mb-4 text-xs font-bold text-text-muted flex items-center gap-2"><ArrowLeft size={14}/> Voltar</button> <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> <div className="lg:col-span-2">{activeLesson && <MilitaryVideoPlayer lesson={activeLesson} onComplete={() => {}} />}</div> <div className="lg:col-span-1"><TechCard title="Aulas"><div className="space-y-2">{courses.find(c=>c.id===activeCourseId)?.modules[0].lessons.map(l => <div key={l.id} onClick={()=>setActiveLesson(l)} className={`p-3 border cursor-pointer ${activeLesson?.id === l.id ? 'border-accent-blue' : 'border-wayne-border'}`}>{l.title}</div>)}</div></TechCard></div> </div> </div> )} </div> )}
         {currentTab === 'missions' && <div className="animate-in fade-in"><MissionsTab token={token} /></div>}
         {currentTab === 'checklist' && <div className="animate-in fade-in"><ChecklistTab token={token} /></div>}
         {currentTab === 'journal' && <div className="animate-in fade-in"><JournalTab token={token} /></div>}
-
-        {(currentTab === 'library' || currentTab === 'stats') && (
-            <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted">
-                <div className="text-center">
-                    <Lock size={48} className="mx-auto mb-4 opacity-50" />
-                    <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p>
-                </div>
-            </div>
-        )}
-
+        {(currentTab === 'library' || currentTab === 'stats') && ( <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted"> <div className="text-center"> <Lock size={48} className="mx-auto mb-4 opacity-50" /> <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p> </div> </div> )}
       </div>
     </div>
   );
