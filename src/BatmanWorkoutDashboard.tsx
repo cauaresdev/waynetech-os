@@ -122,21 +122,97 @@ export default function BatmanWorkoutDashboard() {
   const imc = (parseFloat(userProfile.weight) && parseFloat(userProfile.height)) ? (parseFloat(userProfile.weight) / ((parseFloat(userProfile.height)/100)**2)).toFixed(1) : 'N/A';
 
   // --- EFEITO DE CARREGAMENTO (SÓ RODA SE TIVER TOKEN) ---
+  // --- EFEITO DE CARREGAMENTO INTELIGENTE ---
   useEffect(() => {
     if (!token) return;
+
     const connectToArkham = async () => {
         setLoading(true);
         try {
-            const response = await fetch('https://arkham-backend.onrender.com/workouts', {
+            const response = await fetch('https://arkham-backend.onrender.com/workouts', { // <--- CONFIRA SUA URL
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            // CENÁRIO 1: O servidor retornou dados (Lista)
             if (response.ok) {
-                const data = await response.json();
-                setWorkoutData(data);
+                const dataList = await response.json();
+                
+                // Se a lista vier vazia, força a criação dos padrões
+                if (Array.isArray(dataList) && dataList.length === 0) {
+                     throw new Error("EMPTY_DB");
+                }
+
+                // CONVERSOR: Transforma a Lista do Banco no Formato do Site
+                const newPlans = JSON.parse(JSON.stringify(defaultWorkoutPlans));
+                
+                dataList.forEach((w: any) => {
+                    if (newPlans[w.category] && newPlans[w.category][w.day]) {
+                        newPlans[w.category][w.day] = {
+                            id: w.id, // Salva o ID para poder editar depois
+                            name: w.name,
+                            exercises: w.exercises
+                        };
+                    }
+                });
+
+                setWorkoutData(newPlans);
+            } 
+            // CENÁRIO 2: O servidor deu 404 ou lista vazia (Banco Novo)
+            else {
+                throw new Error("EMPTY_DB");
             }
-        } catch (error) { console.error("Erro offline"); } 
-        finally { setLoading(false); }
+
+        } catch (error: any) { 
+            // 🧬 PROTOCOLO DE GÊNESE: O banco está vazio, vamos populá-lo!
+            if (error.message === "EMPTY_DB" || error.status === 404) {
+                console.log("Banco vazio detectado. Iniciando Gênese...");
+                await initializeDatabase();
+            } else {
+                console.error("Erro offline ou de conexão"); 
+            }
+        } finally { 
+            setLoading(false); 
+        }
     };
+
+    // Função auxiliar para enviar os dados padrão para o banco
+    const initializeDatabase = async () => {
+        const payload: any[] = [];
+        
+        // Transforma o Objeto defaultWorkoutPlans em Lista para o Banco
+        Object.keys(defaultWorkoutPlans).forEach((goal: string) => {
+             const days = defaultWorkoutPlans[goal as UserGoal];
+             Object.keys(days).forEach((day: string) => {
+                 const workout = days[day as WorkoutDay];
+                 payload.push({
+                     category: goal,
+                     day: day,
+                     name: workout.name,
+                     exercises: workout.exercises
+                 });
+             });
+        });
+
+        // Envia para o Backend
+        try {
+            const res = await fetch('https://arkham-backend.onrender.com/workouts/batch', { // <--- CONFIRA SUA URL
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ plans: payload })
+            });
+            
+            if (res.ok) {
+                // Se deu certo, recarrega a página para puxar os dados novos
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error("Falha na inicialização do banco", err);
+        }
+    };
+
     connectToArkham();
   }, [token]);
 
