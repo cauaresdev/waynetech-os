@@ -81,7 +81,92 @@ const MilitaryVideoPlayer = ({ lesson, onComplete }: { lesson: Lesson, onComplet
 };
 
 // --- DADOS PADRÃO (FALLBACK) ---
-const defaultWorkoutPlans: WorkoutPlans = { hipertrofia: { segunda: { name: 'COSTAS, BÍCEPS & MANOPLA', exercises: [] }, terca: { name: 'INFERIOR A', exercises: [] }, quarta: { name: 'OMBROS', exercises: [] }, quinta: { name: 'INFERIOR B', exercises: [] }, sexta: { name: 'PEITO & TRÍCEPS', exercises: [] }, sabado: { name: 'ARKHAM: Armadura', exercises: [] }, domingo: { name: 'Descanso Tático', exercises: [] } }, forca: { segunda: { name: 'Upper', exercises: [] }, terca: { name: 'Lower', exercises: [] }, quarta: { name: 'Rest', exercises: [] }, quinta: { name: 'Upper', exercises: [] }, sexta: { name: 'Lower', exercises: [] }, sabado: { name: 'Rest', exercises: [] }, domingo: { name: 'Rest', exercises: [] } }, definicao: { segunda: { name: 'Fullbody', exercises: [] }, terca: { name: 'Cardio', exercises: [] }, quarta: { name: 'Fullbody', exercises: [] }, quinta: { name: 'Cardio', exercises: [] }, sexta: { name: 'Fullbody', exercises: [] }, sabado: { name: 'HIIT', exercises: [] }, domingo: { name: 'Rest', exercises: [] } } };
+// --- DADOS PADRÃO (CARREGADOS) ---
+const defaultWorkoutPlans: WorkoutPlans = {
+  hipertrofia: {
+    segunda: { 
+      name: 'COSTAS, BÍCEPS & MANOPLA', 
+      exercises: [
+        { name: 'Levantamento Terra', sets: '4x6-8', weight: 'BW + 20kg' },
+        { name: 'Barra Fixa com Peso', sets: '4x8-10', weight: 'BW' },
+        { name: 'Remada Curvada', sets: '4x10', weight: '60kg' },
+        { name: 'Rosca Direta W', sets: '3x12', weight: '30kg' },
+        { name: 'Rosca Martelo', sets: '3x12', weight: '16kg' }
+      ] 
+    },
+    terca: { 
+      name: 'INFERIOR A (Foco Quadríceps)', 
+      exercises: [
+        { name: 'Agachamento Livre', sets: '4x6-8', weight: '80kg' },
+        { name: 'Leg Press 45', sets: '4x10-12', weight: '200kg' },
+        { name: 'Extensora', sets: '3x15', weight: 'Placas Max' },
+        { name: 'Panturrilha em Pé', sets: '5x15', weight: 'BW' }
+      ] 
+    },
+    quarta: { 
+      name: 'OMBROS & TRAPÉZIO', 
+      exercises: [
+        { name: 'Desenvolvimento Militar', sets: '4x8', weight: '40kg' },
+        { name: 'Elevação Lateral', sets: '4x12', weight: '12kg' },
+        { name: 'Elevação Frontal', sets: '3x12', weight: '12kg' },
+        { name: 'Encolhimento', sets: '4x15', weight: '30kg' }
+      ] 
+    },
+    quinta: { 
+      name: 'INFERIOR B (Foco Posterior)', 
+      exercises: [
+        { name: 'Stiff', sets: '4x8-10', weight: '70kg' },
+        { name: 'Mesa Flexora', sets: '4x12', weight: 'Placas Med' },
+        { name: 'Cadeira Flexora', sets: '3x15', weight: 'Placas Med' },
+        { name: 'Passada (Avanço)', sets: '3x20', weight: 'Halteres 10kg' }
+      ] 
+    },
+    sexta: { 
+      name: 'PEITO & TRÍCEPS', 
+      exercises: [
+        { name: 'Supino Reto', sets: '4x6-8', weight: '70kg' },
+        { name: 'Supino Inclinado Halteres', sets: '4x10', weight: '24kg' },
+        { name: 'Crossover (Polia)', sets: '3x15', weight: 'Placas' },
+        { name: 'Tríceps Testa', sets: '4x10', weight: '30kg' },
+        { name: 'Tríceps Corda', sets: '3x15', weight: 'Placas' }
+      ] 
+    },
+    sabado: { 
+      name: 'ARKHAM: Condicionamento', 
+      exercises: [
+        { name: 'Corrida Intervalada', sets: '20 min', weight: 'Alta Int.' },
+        { name: 'Saco de Pancada', sets: '5 rounds', weight: '3 min' },
+        { name: 'Pular Corda', sets: '10 min', weight: 'Constante' }
+      ] 
+    },
+    domingo: { 
+      name: 'Descanso Tático', 
+      exercises: [
+        { name: 'Alongamento Completo', sets: '1x', weight: '20 min' },
+        { name: 'Mobilidade Articular', sets: '1x', weight: '15 min' }
+      ] 
+    }
+  },
+  // Mantive os outros simplificados para economizar espaço, mas agora eles existem
+  forca: { 
+    segunda: { name: 'Upper Strength', exercises: [{ name: 'Supino', sets: '5x5', weight: '80kg' }] }, 
+    terca: { name: 'Lower Strength', exercises: [{ name: 'Agachamento', sets: '5x5', weight: '100kg' }] }, 
+    quarta: { name: 'Rest', exercises: [] }, 
+    quinta: { name: 'Upper Hyper', exercises: [{ name: 'Militar', sets: '3x10', weight: '40kg' }] }, 
+    sexta: { name: 'Lower Hyper', exercises: [{ name: 'Leg Press', sets: '3x12', weight: '200kg' }] }, 
+    sabado: { name: 'Rest', exercises: [] }, 
+    domingo: { name: 'Rest', exercises: [] } 
+  },
+  definicao: { 
+    segunda: { name: 'Fullbody A', exercises: [{ name: 'Burpees', sets: '3x15', weight: 'BW' }] }, 
+    terca: { name: 'Cardio', exercises: [{ name: 'Esteira', sets: '45min', weight: 'Leve' }] }, 
+    quarta: { name: 'Fullbody B', exercises: [{ name: 'Flexões', sets: '4x20', weight: 'BW' }] }, 
+    quinta: { name: 'Cardio', exercises: [{ name: 'Bike', sets: '45min', weight: 'Mod' }] }, 
+    sexta: { name: 'Fullbody C', exercises: [{ name: 'Agachamento Salto', sets: '3x15', weight: 'BW' }] }, 
+    sabado: { name: 'HIIT', exercises: [{ name: 'Sprints', sets: '10x', weight: 'Max' }] }, 
+    domingo: { name: 'Rest', exercises: [] } 
+  }
+};
 const defaultRoutine: RoutineItem[] = [{ id: 1, timeStart: '07:00', timeEnd: '07:15', activity: 'Stomach Vacuum', category: 'training' }];
 const defaultCourses: Course[] = [ { id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco.", progress: 15, modules: [{ id: 1, title: "FASE 1: BLINDAGEM", lessons: [{ id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }] }] } ];
 
