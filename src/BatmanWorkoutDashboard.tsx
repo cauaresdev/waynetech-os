@@ -8,7 +8,7 @@ import {
 import MissionsTab from './MissionsTab';
 import ChecklistTab from './ChecklistTab';
 import JournalTab from './JournalTab';
-
+import RoutineTab from './RoutineTab';
 // ==========================================
 // ⚙️ CONFIGURAÇÃO DA API
 // ==========================================
@@ -22,7 +22,6 @@ interface Workout { id?: number; name: string; exercises: Exercise[]; }
 type WorkoutDay = 'segunda' | 'terca' | 'quarta' | 'quinta' | 'sexta' | 'sabado' | 'domingo';
 type UserGoal = 'hipertrofia' | 'forca' | 'definicao';
 type WorkoutPlans = Record<UserGoal, Record<WorkoutDay, Workout>>;
-interface RoutineItem { id: number; timeStart: string; timeEnd: string; activity: string; category: 'work' | 'training' | 'rest' | 'sustenance'; }
 interface Lesson { id: number; title: string; duration: string; completed: boolean; type: 'video' | 'text'; videoUrl?: string; }
 interface Module { id: number; title: string; lessons: Lesson[]; }
 interface Course { id: number; title: string; description: string; progress: number; modules: Module[]; }
@@ -45,8 +44,6 @@ const masterWorkoutPlans: WorkoutPlans = {
     segunda: { name: 'Fullbody A', exercises: [{ name: 'Burpees', sets: '3x15', weight: 'BW' }] }, terca: { name: 'Cardio', exercises: [{ name: 'Esteira', sets: '45min', weight: 'Leve' }] }, quarta: { name: 'Fullbody B', exercises: [{ name: 'Flexões', sets: '4x20', weight: 'BW' }] }, quinta: { name: 'Cardio', exercises: [{ name: 'Bike', sets: '45min', weight: 'Mod' }] }, sexta: { name: 'Fullbody C', exercises: [{ name: 'Agachamento Salto', sets: '3x15', weight: 'BW' }] }, sabado: { name: 'HIIT', exercises: [{ name: 'Sprints', sets: '10x', weight: 'Max' }] }, domingo: { name: 'Rest', exercises: [] } 
   }
 };
-
-const defaultRoutine: RoutineItem[] = [{ id: 1, timeStart: '07:00', timeEnd: '07:15', activity: 'Stomach Vacuum', category: 'training' }];
 const defaultCourses: Course[] = [ { id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco.", progress: 15, modules: [{ id: 1, title: "FASE 1: BLINDAGEM", lessons: [{ id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }] }] } ];
 
 // --- COMPONENTES AUXILIARES ---
@@ -91,7 +88,6 @@ export default function BatmanWorkoutDashboard() {
   const [workoutData, setWorkoutData] = useState<WorkoutPlans | null>(null);
   
   const [userProfile, setUserProfile] = useState(() => { const s = localStorage.getItem('bat_profile_v2'); return s ? JSON.parse(s) : { name: '', weight: '', goal: 'hipertrofia' }; });
-  const [routine] = useState<RoutineItem[]>(() => { const s = localStorage.getItem('bat_routine'); return s ? JSON.parse(s) : defaultRoutine; });
   const [courses] = useState<Course[]>(() => { const s = localStorage.getItem('bat_courses'); return s ? JSON.parse(s) : defaultCourses; });
 
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
@@ -274,6 +270,11 @@ export default function BatmanWorkoutDashboard() {
   const safePlan = workoutData[currentGoal] || masterWorkoutPlans[currentGoal];
   const currentWorkout = safePlan[selectedDay];
 
+
+
+
+
+
   return (
     <div className="min-h-screen bg-wayne-dark text-text-main pb-24 font-hud selection:bg-accent-blue selection:text-black relative overflow-x-hidden">
       <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
@@ -342,7 +343,7 @@ export default function BatmanWorkoutDashboard() {
           </div>
         )}
 
-        {currentTab === 'routine' && <div className="animate-in fade-in"><TechCard title="Agenda"><div className="space-y-4">{routine.map(i => <div key={i.id} className="p-4 bg-wayne-panel border border-wayne-border"><span className="text-accent-blue font-bold text-xs">{i.timeStart}</span><h3 className="text-white font-bold">{i.activity}</h3></div>)}</div></TechCard></div>}
+        {currentTab === 'routine' && <div className="animate-in fade-in"><RoutineTab token={token || ''} /></div>}
         {currentTab === 'protocols' && ( <div className="animate-in fade-in"> {activeCourseId === null ? ( <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{courses.map(c => <TechCard key={c.id} title={c.title} icon={Lock} className="cursor-pointer" ><div onClick={() => { setActiveCourseId(c.id); setActiveLesson(c.modules[0].lessons[0]); }}><p className="text-sm text-text-muted mb-4">{c.description}</p><TacticalButton className="text-[10px] w-full">Acessar</TacticalButton></div></TechCard>)}</div> ) : ( <div> <button onClick={() => setActiveCourseId(null)} className="mb-4 text-xs font-bold text-text-muted flex items-center gap-2"><ArrowLeft size={14}/> Voltar</button> <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> <div className="lg:col-span-2">{activeLesson && <MilitaryVideoPlayer lesson={activeLesson} onComplete={() => {}} />}</div> <div className="lg:col-span-1"><TechCard title="Aulas"><div className="space-y-2">{courses.find(c=>c.id===activeCourseId)?.modules[0].lessons.map(l => <div key={l.id} onClick={()=>setActiveLesson(l)} className={`p-3 border cursor-pointer ${activeLesson?.id === l.id ? 'border-accent-blue' : 'border-wayne-border'}`}>{l.title}</div>)}</div></TechCard></div> </div> </div> )} </div> )}
         {currentTab === 'missions' && <div className="animate-in fade-in"><MissionsTab token={token} /></div>}
         {currentTab === 'checklist' && <div className="animate-in fade-in"><ChecklistTab token={token} /></div>}
