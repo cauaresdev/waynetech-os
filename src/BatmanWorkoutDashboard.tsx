@@ -9,14 +9,11 @@ import MissionsTab from './MissionsTab';
 import ChecklistTab from './ChecklistTab';
 import JournalTab from './JournalTab';
 import RoutineTab from './RoutineTab';
-// ==========================================
-// ⚙️ CONFIGURAÇÃO DA API
-// ==========================================
-// 👇👇👇 CONFIRA SEU LINK AQUI 👇👇👇
+
 const API_BASE = 'https://arkham-backend.onrender.com'; 
 
 // --- TIPOS ---
-type AppTab = 'dashboard' | 'routine' | 'protocols' | 'stats' | 'checklist' | 'missions' | 'journal' | 'library';
+type AppTab = 'dashboard' | 'routine' | 'protocols' | 'checklist' | 'missions' | 'journal' | 'library';
 interface Exercise { id?: number; name: string; sets: string; weight: string; }
 interface Workout { id?: number; name: string; exercises: Exercise[]; }
 type WorkoutDay = 'segunda' | 'terca' | 'quarta' | 'quinta' | 'sexta' | 'sabado' | 'domingo';
@@ -26,7 +23,6 @@ interface Lesson { id: number; title: string; duration: string; completed: boole
 interface Module { id: number; title: string; lessons: Lesson[]; }
 interface Course { id: number; title: string; description: string; progress: number; modules: Module[]; }
 
-// --- DADOS MESTRES (Para Auto-Gênese) ---
 const masterWorkoutPlans: WorkoutPlans = {
   hipertrofia: {
     segunda: { name: 'COSTAS, BÍCEPS & MANOPLA', exercises: [{ name: 'Levantamento Terra', sets: '4x6-8', weight: 'BW + 20kg' }, { name: 'Barra Fixa com Peso', sets: '4x8-10', weight: 'BW' }, { name: 'Remada Curvada', sets: '4x10', weight: '60kg' }, { name: 'Rosca Direta W', sets: '3x12', weight: '30kg' }, { name: 'Rosca Martelo', sets: '3x12', weight: '16kg' }] },
@@ -46,7 +42,6 @@ const masterWorkoutPlans: WorkoutPlans = {
 };
 const defaultCourses: Course[] = [ { id: 1, title: "COMBATE MENTAL", description: "Técnicas de foco.", progress: 15, modules: [{ id: 1, title: "FASE 1: BLINDAGEM", lessons: [{ id: 101, title: "O Princípio da Contingência", duration: "12:00", completed: true, type: "video", videoUrl: "https://www.youtube.com/watch?v=m-N5aAiaM2Y&list=PLEfwqyY2ox86Ph-WfPNEob_yIhSRDoIQ1" }] }] } ];
 
-// --- COMPONENTES AUXILIARES ---
 const TechCard = ({ children, className = "", title, icon: Icon, active = false }: any) => (
   <div className={`relative overflow-hidden rounded-sm border transition-all duration-300 ${active ? 'border-accent-blue bg-accent-blue/5' : `border-wayne-border bg-wayne-panel hover:border-accent-blue/30`} backdrop-blur-sm ${className}`}>
     <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/10"></div>
@@ -83,7 +78,6 @@ export default function BatmanWorkoutDashboard() {
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
 
-  // ESTADO INICIAL NULL (Para evitar piscar dados errados)
   const [loading, setLoading] = useState(false);
   const [workoutData, setWorkoutData] = useState<WorkoutPlans | null>(null);
   
@@ -99,25 +93,21 @@ export default function BatmanWorkoutDashboard() {
   const currentGoal: UserGoal = (userProfile.goal as UserGoal) || 'hipertrofia';
   const imc = (parseFloat(userProfile.weight) && parseFloat(userProfile.height)) ? (parseFloat(userProfile.weight) / ((parseFloat(userProfile.height)/100)**2)).toFixed(1) : 'N/A';
 
-  // --- O CÉREBRO AUTÔNOMO ---
   useEffect(() => {
     if (!token) return;
 
     const initializeSystem = async () => {
         setLoading(true);
         try {
-            // 1. Tenta buscar os dados do banco
             const res = await fetch(`${API_BASE}/workouts`, { headers: { 'Authorization': `Bearer ${token}` } });
             
             if (res.ok) {
                 const dataList = await res.json();
                 
-                // 2. Lógica de Decisão: Banco Vazio ou Incompleto?
                 if (!Array.isArray(dataList) || dataList.length < 5) {
                     console.log("🦇 Banco incompleto detectado. Iniciando Auto-Gênese...");
                     await performAutoGenesis();
                 } else {
-                    // 3. Banco Saudável: Processar e Exibir
                     processAndSetData(dataList);
                 }
             } else {
@@ -132,7 +122,6 @@ export default function BatmanWorkoutDashboard() {
     };
 
     const performAutoGenesis = async () => {
-        // Prepara os dados mestres para envio
         const payload: any[] = [];
         Object.keys(masterWorkoutPlans).forEach((goal: string) => {
              const days = masterWorkoutPlans[goal as UserGoal];
@@ -142,7 +131,6 @@ export default function BatmanWorkoutDashboard() {
              });
         });
 
-        // Envia para o servidor limpar e criar
         try {
             await fetch(`${API_BASE}/workouts/batch`, {
                 method: 'POST',
@@ -164,9 +152,9 @@ export default function BatmanWorkoutDashboard() {
             const dayKey = w.day.toLowerCase().trim() as WorkoutDay;
             if (newPlans[catKey] && newPlans[catKey][dayKey]) {
                 newPlans[catKey][dayKey] = {
-                    id: w.id, // ID REAL DO BANCO
+                    id: w.id, 
                     name: w.name,
-                    exercises: w.exercises // EXERCÍCIOS REAIS COM ID
+                    exercises: w.exercises 
                 };
                 matchCount++;
             }
@@ -179,7 +167,6 @@ export default function BatmanWorkoutDashboard() {
   }, [token]);
 
 
-  // --- HANDLERS ---
   const handleAuth = async () => {
       const endpoint = isRegistering ? '/register' : '/login';
       try {
@@ -217,15 +204,12 @@ export default function BatmanWorkoutDashboard() {
   const removeExercise = async (idx: number) => { 
       if(!workoutData) return; 
       
-      // 1. Identifica o alvo antes de remover
       const targetExercise = workoutData[currentGoal][selectedDay].exercises[idx];
 
-      // 2. Remove visualmente (para ser rápido)
       const u = JSON.parse(JSON.stringify(workoutData)); 
       u[currentGoal][selectedDay].exercises.splice(idx, 1); 
       setWorkoutData(u); 
 
-      // 3. Manda a ordem de eliminação para o Banco
       if (targetExercise.id && token) {
           console.log(`🗑️ Eliminando exercício ID: ${targetExercise.id}`);
           try {
@@ -291,7 +275,7 @@ export default function BatmanWorkoutDashboard() {
         </header>
 
         <nav className="flex gap-1 mb-8 overflow-x-auto pb-2 border-b border-wayne-border scrollbar-hide">
-          {['dashboard', 'routine', 'protocols', 'stats', 'checklist', 'missions', 'library', 'journal'].map((tab: any) => (
+          {['dashboard', 'routine', 'protocols', 'checklist', 'missions', 'library', 'journal'].map((tab: any) => (
             <button key={tab} onClick={() => setCurrentTab(tab)} className={`px-6 py-3 text-xs font-bold uppercase transition-all border-b-2 tracking-widest whitespace-nowrap ${currentTab === tab ? 'border-accent-blue text-accent-blue bg-accent-blue/5' : 'border-transparent text-text-muted hover:text-white'}`}> {tab === 'protocols' ? 'PROTOCOLOS' : tab === 'routine' ? 'AGENDA' : tab} </button>
           ))}
         </nav>
@@ -348,7 +332,7 @@ export default function BatmanWorkoutDashboard() {
         {currentTab === 'missions' && <div className="animate-in fade-in"><MissionsTab token={token} /></div>}
         {currentTab === 'checklist' && <div className="animate-in fade-in"><ChecklistTab token={token} /></div>}
         {currentTab === 'journal' && <div className="animate-in fade-in"><JournalTab token={token} /></div>}
-        {(currentTab === 'library' || currentTab === 'stats') && ( <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted"> <div className="text-center"> <Lock size={48} className="mx-auto mb-4 opacity-50" /> <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p> </div> </div> )}
+        {currentTab === 'library' && ( <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted"> <div className="text-center"> <Lock size={48} className="mx-auto mb-4 opacity-50" /> <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p> </div> </div> )}
       </div>
     </div>
   );
