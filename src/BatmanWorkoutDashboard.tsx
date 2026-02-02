@@ -13,7 +13,7 @@ import RoutineTab from './RoutineTab';
 const API_BASE = 'https://arkham-backend.onrender.com'; 
 
 // --- TIPOS ---
-type AppTab = 'dashboard' | 'routine' | 'protocols' | 'checklist' | 'missions' | 'journal' | 'library';
+type AppTab = 'dashboard' | 'routine' | 'protocols' | 'checklist' | 'missions' | 'journal';
 interface Exercise { id?: number; name: string; sets: string; weight: string; }
 interface Workout { id?: number; name: string; exercises: Exercise[]; }
 type WorkoutDay = 'segunda' | 'terca' | 'quarta' | 'quinta' | 'sexta' | 'sabado' | 'domingo';
@@ -275,7 +275,7 @@ export default function BatmanWorkoutDashboard() {
         </header>
 
         <nav className="flex gap-1 mb-8 overflow-x-auto pb-2 border-b border-wayne-border scrollbar-hide">
-          {['dashboard', 'routine', 'protocols', 'checklist', 'missions', 'library', 'journal'].map((tab: any) => (
+          {['dashboard', 'routine', 'protocols', 'checklist', 'missions', 'journal'].map((tab: any) => (
             <button key={tab} onClick={() => setCurrentTab(tab)} className={`px-6 py-3 text-xs font-bold uppercase transition-all border-b-2 tracking-widest whitespace-nowrap ${currentTab === tab ? 'border-accent-blue text-accent-blue bg-accent-blue/5' : 'border-transparent text-text-muted hover:text-white'}`}> {tab === 'protocols' ? 'PROTOCOLOS' : tab === 'routine' ? 'AGENDA' : tab} </button>
           ))}
         </nav>
@@ -332,7 +332,6 @@ export default function BatmanWorkoutDashboard() {
         {currentTab === 'missions' && <div className="animate-in fade-in"><MissionsTab token={token} /></div>}
         {currentTab === 'checklist' && <div className="animate-in fade-in"><ChecklistTab token={token} /></div>}
         {currentTab === 'journal' && <div className="animate-in fade-in"><JournalTab token={token} /></div>}
-        {currentTab === 'library' && ( <div className="flex items-center justify-center h-64 animate-in fade-in text-text-muted"> <div className="text-center"> <Lock size={48} className="mx-auto mb-4 opacity-50" /> <p className="font-hud tracking-widest text-xs">MÓDULO EM DESENVOLVIMENTO</p> </div> </div> )}
       </div>
     </div>
   );
