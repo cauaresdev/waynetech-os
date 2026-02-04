@@ -5,7 +5,7 @@ export default function JournalTab({ token }: { token: string }) {
   const [journals, setJournals] = useState<any[]>([]);
   const [content, setContent] = useState('');
   
-  const BASE_URL = 'https://arkham-api-cauarosa.onrender.com';
+  const BASE_URL = 'https://arkham-backend.onrender.com';
 
   useEffect(() => { fetchJournals(); }, [token]);
 
