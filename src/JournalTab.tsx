@@ -48,7 +48,6 @@ export default function JournalTab({ token }: { token: string }) {
       setIsLoading(false);
     }
   };
-
   const deleteEntry = async (id: number) => {
     if (!confirm("Confirmar eliminação de registro?")) return;
     try {
